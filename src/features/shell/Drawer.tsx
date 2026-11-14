@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { FEATURES } from "@/shared/features";
 import { cx } from "@/ui/primitives";
 import { AssetsIcon, MemoIcon, PinIcon, SettingsIcon, TodoIcon, UploadIcon } from "./icons";
 import { sectionOf } from "./sections";
@@ -77,10 +78,10 @@ export function Drawer({ id, mode, pathname, pinned, onTogglePin, onNavigate, on
           {item("/calendar", "달력", todoView === "calendar", null, "todo", true)}
           {item("/list", "목록", todoView === "list", null, "todo", true)}
           {item("/memo", "메모", section === "memo", <MemoIcon size={16} />, "memo")}
-          {item("/assets", "자산", section === "assets", <AssetsIcon size={16} />, "assets")}
+          {FEATURES.assets && item("/assets", "자산", section === "assets", <AssetsIcon size={16} />, "assets")}
         </div>
         <div className={styles.bottom}>
-          {item("/assets", "거래내역 올리기", false, <UploadIcon size={16} />, "assets")}
+          {FEATURES.assets && item("/assets", "거래내역 올리기", false, <UploadIcon size={16} />, "assets")}
           {item("/settings", "설정", section === "settings", <SettingsIcon size={16} />, "settings")}
         </div>
       </nav>

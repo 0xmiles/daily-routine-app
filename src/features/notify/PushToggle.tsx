@@ -46,8 +46,8 @@ function toBody(subscription: PushSubscription): PushSubscriptionBody {
 
 const DESCRIPTIONS: Record<Status, string> = {
   checking: "알림 상태를 확인하고 있어요.",
-  on: "할 일 마감과 거래내역 알림이 이 기기로 와요.",
-  off: "켜면 할 일 마감과 거래내역 알림을 이 기기로 보내 드려요.",
+  on: "할 일 마감 알림이 이 기기로 와요.",
+  off: "켜면 할 일 마감 알림을 이 기기로 보내 드려요.",
   "ios-browser": "홈 화면에 추가한 뒤 알림을 켤 수 있어요.",
   unsupported: "이 브라우저는 웹 알림을 지원하지 않아요. 맥에서는 Safari나 Chrome으로 열어 주세요.",
   denied: "알림이 차단되어 있어요. 브라우저 설정에서 이 사이트의 알림을 허용한 뒤 다시 열어 주세요.",

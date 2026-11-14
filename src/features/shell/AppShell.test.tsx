@@ -77,8 +77,9 @@ describe("AppShell narrow (<900px)", () => {
     renderShell();
     const tabs = screen.getByRole("navigation", { name: "주 메뉴" });
     const links = within(tabs).getAllByRole("link");
-    expect(links.map((a) => a.textContent)).toEqual(["할 일", "메모", "자산"]);
-    expect(links.map((a) => a.getAttribute("href"))).toEqual(["/today", "/memo", "/assets"]);
+    // 자산 is turned off (src/shared/features.ts).
+    expect(links.map((a) => a.textContent)).toEqual(["할 일", "메모"]);
+    expect(links.map((a) => a.getAttribute("href"))).toEqual(["/today", "/memo"]);
     // The active tab label is highlighted.
     const active = within(tabs).getByRole("link", { name: "할 일" });
     expect(active.getAttribute("aria-current")).toBe("page");
@@ -172,7 +173,7 @@ describe("AppShell wide (≥900px)", () => {
     const labels = within(drawer)
       .getAllByRole("link")
       .map((a) => a.textContent);
-    expect(labels).toEqual(["할 일", "오늘", "달력", "목록", "메모", "자산", "거래내역 올리기", "설정"]);
+    expect(labels).toEqual(["할 일", "오늘", "달력", "목록", "메모", "설정"]);
     await userEvent.click(within(drawer).getByRole("link", { name: "메모" }));
     expect(screen.queryByRole("navigation", { name: "전체 메뉴" })).toBeNull();
   });
@@ -186,7 +187,7 @@ describe("AppShell wide (≥900px)", () => {
     await userEvent.click(pin);
     expect(screen.getByRole("button", { name: "고정" }).getAttribute("aria-pressed")).toBe("true");
     // Choosing an item no longer closes a pinned drawer.
-    await userEvent.click(within(screen.getByRole("navigation", { name: "전체 메뉴" })).getByRole("link", { name: "자산" }));
+    await userEvent.click(within(screen.getByRole("navigation", { name: "전체 메뉴" })).getByRole("link", { name: "메모" }));
     expect(screen.getByRole("navigation", { name: "전체 메뉴" })).toBeTruthy();
     unmount();
 

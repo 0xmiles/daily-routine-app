@@ -20,21 +20,19 @@ const puts = () =>
   fetchSpy.mock.calls.filter(([, init]) => (init as RequestInit)?.method === "PUT").map(([, init]) => JSON.parse(String((init as RequestInit).body)));
 
 describe("ReminderSettings", () => {
-  it("shows the schedule as a sentence and saves the weekday right away", async () => {
+  it("leaves out the 거래내역 reminder while 자산 is turned off", async () => {
     render(<ReminderSettings />);
-    expect(await screen.findByText(/매주 일요일/)).toBeTruthy();
-    await userEvent.selectOptions(screen.getByLabelText("요일"), "월요일");
-    await waitFor(() => expect(puts()).toEqual([{ uploadReminderDow: 1 }]));
-    expect(await screen.findByText("저장했어요.")).toBeTruthy();
-    expect(screen.getByText(/매주 월요일/)).toBeTruthy();
+    expect(await screen.findByText("할 일 기본 알림")).toBeTruthy();
+    expect(screen.queryByText("거래내역 올리기 알림")).toBeNull();
+    expect(screen.queryByLabelText("요일")).toBeNull();
   });
 
   it("saves a time once typing settles", async () => {
     render(<ReminderSettings />);
-    const time = await screen.findByLabelText("시간");
-    fireEvent.change(time, { target: { value: "21:30" } });
+    const time = await screen.findByLabelText("날짜만 있으면 그날");
+    fireEvent.change(time, { target: { value: "08:30" } });
     expect(puts()).toEqual([]);
-    await waitFor(() => expect(puts()).toEqual([{ uploadReminderTime: "21:30" }]), { timeout: 2000 });
+    await waitFor(() => expect(puts()).toEqual([{ dateOnlyNotifyTime: "08:30" }]), { timeout: 2000 });
   });
 
   it("saves the default todo offset", async () => {

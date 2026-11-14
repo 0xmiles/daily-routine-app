@@ -1,7 +1,13 @@
 import { and, eq, inArray, isNotNull, isNull, lt, lte, or } from "drizzle-orm";
 import type { Db } from "@/server/db/client";
-import { notifications, pushSubscriptions, settings, todos } from "@/server/db/schema";
+import {
+  notifications,
+  pushSubscriptions,
+  settings,
+  todos,
+} from "@/server/db/schema";
 import { addDays, seoulDateTimeToDate, seoulParts } from "@/shared/time";
+import { FEATURES } from "@/shared/features";
 
 // One cron tick (every minute, POST /api/cron/tick):
 //   1. todo notifications whose fireAt has passed are sent once;
@@ -27,7 +33,10 @@ export interface PushPayload {
 }
 
 /** 'gone' = the subscription no longer exists (404/410) and should be deleted. Throws on other failures. */
-export type PushSender = (sub: PushTarget, payload: PushPayload) => Promise<"ok" | "gone">;
+export type PushSender = (
+  sub: PushTarget,
+  payload: PushPayload,
+) => Promise<"ok" | "gone">;
 
 export const STALE_AFTER_MS = 6 * 60 * 60 * 1000;
 
@@ -42,27 +51,47 @@ export function lastUploadSlot(now: Date, dow: number, time: string): Date {
   const { date, weekday } = seoulParts(now);
   const back = (weekday - dow + 7) % 7;
   const slot = seoulDateTimeToDate(addDays(date, -back), time);
-  return slot.getTime() > now.getTime() ? seoulDateTimeToDate(addDays(date, -back - 7), time) : slot;
+  return slot.getTime() > now.getTime()
+    ? seoulDateTimeToDate(addDays(date, -back - 7), time)
+    : slot;
 }
 
-export async function runTick(db: Db, now: Date, send: PushSender): Promise<{ sent: number }> {
+export interface TickOptions {
+  /** Send the weekly 거래내역 reminder (only while 자산 is on, src/shared/features.ts). */
+  uploadReminder?: boolean;
+}
+
+export async function runTick(
+  db: Db,
+  now: Date,
+  send: PushSender,
+  { uploadReminder = FEATURES.assets }: TickOptions = {},
+): Promise<{ sent: number }> {
   const subs = await db.select().from(pushSubscriptions);
   const gone = new Set<string>();
   let sent = 0;
 
   /** Sends to every live subscription. Returns how many succeeded and how many threw. */
-  async function deliver(payload: PushPayload): Promise<{ delivered: number; failed: number }> {
+  async function deliver(
+    payload: PushPayload,
+  ): Promise<{ delivered: number; failed: number }> {
     let delivered = 0;
     let failed = 0;
     for (const sub of subs) {
       if (gone.has(sub.endpoint)) continue;
       try {
-        const result = await send({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload);
+        const result = await send(
+          { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+          payload,
+        );
         if (result === "gone") gone.add(sub.endpoint);
         else delivered++;
       } catch (error) {
         failed++;
-        console.warn("[push] send failed:", error instanceof Error ? error.message : error);
+        console.warn(
+          "[push] send failed:",
+          error instanceof Error ? error.message : error,
+        );
       }
     }
     sent += delivered;
@@ -73,7 +102,12 @@ export async function runTick(db: Db, now: Date, send: PushSender): Promise<{ se
   await db
     .update(notifications)
     .set({ sentAt: now })
-    .where(and(isNull(notifications.sentAt), lt(notifications.fireAt, new Date(now.getTime() - STALE_AFTER_MS))));
+    .where(
+      and(
+        isNull(notifications.sentAt),
+        lt(notifications.fireAt, new Date(now.getTime() - STALE_AFTER_MS)),
+      ),
+    );
 
   // 1b. Claim everything due.
   const due = await db
@@ -84,7 +118,11 @@ export async function runTick(db: Db, now: Date, send: PushSender): Promise<{ se
 
   if (due.length > 0) {
     // A completed todo never notifies, even if its row slipped through.
-    const todoIds = [...new Set(due.map((n) => n.todoId).filter((id): id is string => id !== null))];
+    const todoIds = [
+      ...new Set(
+        due.map((n) => n.todoId).filter((id): id is string => id !== null),
+      ),
+    ];
     const doneIds = new Set(
       todoIds.length === 0
         ? []
@@ -99,15 +137,24 @@ export async function runTick(db: Db, now: Date, send: PushSender): Promise<{ se
     due.sort((a, b) => a.fireAt.getTime() - b.fireAt.getTime());
     for (const n of due) {
       if (n.todoId && doneIds.has(n.todoId)) continue;
-      const { delivered, failed } = await deliver({ title: n.title, body: n.body, url: n.url });
+      const { delivered, failed } = await deliver({
+        title: n.title,
+        body: n.body,
+        url: n.url,
+      });
       if (delivered === 0 && failed > 0) {
-        await db.update(notifications).set({ sentAt: null }).where(eq(notifications.id, n.id));
+        await db
+          .update(notifications)
+          .set({ sentAt: null })
+          .where(eq(notifications.id, n.id));
       }
     }
   }
 
-  // 2. Weekly upload reminder: once per slot, claimed atomically.
-  const [s] = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
+  // 2. Weekly upload reminder: once per slot, claimed atomically (off while 자산 is off).
+  const [s] = uploadReminder
+    ? await db.select().from(settings).where(eq(settings.id, 1)).limit(1)
+    : [];
   if (s) {
     const slot = lastUploadSlot(now, s.uploadReminderDow, s.uploadReminderTime);
     const claimed = await db
@@ -116,7 +163,10 @@ export async function runTick(db: Db, now: Date, send: PushSender): Promise<{ se
       .where(
         and(
           eq(settings.id, 1),
-          or(isNull(settings.lastUploadReminderSentAt), lt(settings.lastUploadReminderSentAt, slot)),
+          or(
+            isNull(settings.lastUploadReminderSentAt),
+            lt(settings.lastUploadReminderSentAt, slot),
+          ),
         ),
       )
       .returning({ id: settings.id });
@@ -133,7 +183,9 @@ export async function runTick(db: Db, now: Date, send: PushSender): Promise<{ se
 
   // 3. Forget subscriptions the push service no longer knows.
   if (gone.size > 0) {
-    await db.delete(pushSubscriptions).where(inArray(pushSubscriptions.endpoint, [...gone]));
+    await db
+      .delete(pushSubscriptions)
+      .where(inArray(pushSubscriptions.endpoint, [...gone]));
   }
 
   return { sent };

@@ -129,22 +129,33 @@ describe("runTick: weekly upload reminder", () => {
       .where(eq(settings.id, 1));
 
     const before = recorder();
-    expect(await runTick(db, new Date("2026-11-15T10:55:00Z"), before)).toEqual({ sent: 0 }); // 19:55 KST
+    const on = { uploadReminder: true };
+    expect(await runTick(db, new Date("2026-11-15T10:55:00Z"), before, on)).toEqual({ sent: 0 }); // 19:55 KST
     expect(before).not.toHaveBeenCalled();
 
     const at = new Date("2026-11-15T11:05:00Z"); // 20:05 KST
     const send = recorder();
-    expect(await runTick(db, at, send)).toEqual({ sent: 1 });
+    expect(await runTick(db, at, send, on)).toEqual({ sent: 1 });
     expect(send).toHaveBeenCalledWith(SUB, UPLOAD_REMINDER);
     expect(UPLOAD_REMINDER.title).toBe("신한 거래내역을 올릴 때예요");
     expect(UPLOAD_REMINDER.url).toBe("/assets");
 
     const again = recorder();
-    expect(await runTick(db, at, again)).toEqual({ sent: 0 });
+    expect(await runTick(db, at, again, on)).toEqual({ sent: 0 });
     expect(again).not.toHaveBeenCalled();
 
     const [row] = await db.select().from(settings);
     expect(row.lastUploadReminderSentAt?.toISOString()).toBe(at.toISOString());
+  });
+
+  it("sends no upload reminder while 자산 is turned off", async () => {
+    await db
+      .update(settings)
+      .set({ lastUploadReminderSentAt: new Date("2026-11-08T11:01:00Z") })
+      .where(eq(settings.id, 1));
+    const send = recorder();
+    expect(await runTick(db, new Date("2026-11-15T11:05:00Z"), send)).toEqual({ sent: 0 });
+    expect(send).not.toHaveBeenCalled();
   });
 });
 

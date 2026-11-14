@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/today",
     name: "데일리",
     short_name: "데일리",
-    description: "회사와 개인 일정, 할 일, 메모, 자산을 한곳에서 보는 하루 관리 앱이에요.",
+    description: "회사와 개인 일정, 할 일, 메모를 한곳에서 보는 하루 관리 앱이에요.",
     lang: "ko",
     dir: "ltr",
     start_url: "/today",

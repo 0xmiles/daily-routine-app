@@ -30,7 +30,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static brand mark */}
         <img src="/icons/mark.svg" alt="" className={styles.mark} width={64} height={64} />
         <h1 className={styles.name}>데일리</h1>
-        <p className={styles.lede}>회사와 개인 일정, 할 일, 메모, 자산을 한곳에서 봐요.</p>
+        <p className={styles.lede}>회사와 개인 일정, 할 일, 메모를 한곳에서 봐요.</p>
         <hr className={styles.perforation} />
         <p className={styles.prompt}>허용된 Google 계정으로 로그인해 주세요.</p>
         {message ? (
