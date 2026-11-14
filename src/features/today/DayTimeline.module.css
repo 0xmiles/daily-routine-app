@@ -79,16 +79,20 @@
   background: var(--sun);
 }
 
+/* Blocks sit above the hour rows; only the blocks themselves catch taps. */
 .blocks {
   position: absolute;
   inset: 0;
+  z-index: 1;
   margin: 0;
   padding: 0;
   list-style: none;
+  pointer-events: none;
 }
 
 .slot {
   position: absolute;
+  pointer-events: auto;
 }
 
 .block {
@@ -109,6 +113,15 @@
   line-height: 1.35;
   text-align: left;
   cursor: pointer;
+}
+
+/* An hour or less: title, then time · place · tag on the same line. */
+.oneLine {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  padding-top: 3px;
+  padding-bottom: 3px;
 }
 
 /* 회사 = tangerine with a filled edge, 개인 = green with an outline. */
@@ -149,12 +162,37 @@
   text-overflow: ellipsis;
 }
 
+.titleText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .blockMeta {
   display: flex;
   flex-wrap: wrap;
   column-gap: 8px;
   font-size: 11px;
   color: var(--pencil);
+}
+
+/* The title keeps its room; the meta takes what is left and trails off. */
+.oneLine .blockTitle {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.oneLine .blockMeta {
+  display: block;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.oneLine .blockMeta > span + span {
+  margin-left: 8px;
 }
 
 .memo {
@@ -165,4 +203,89 @@
   font-weight: 500;
   color: var(--pencil);
   box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+/* ---------- empty hour rows: tap to start a new event at that hour ---------- */
+
+.rows {
+  position: absolute;
+  inset: 0;
+}
+
+.row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-start;
+  padding: 0;
+  border: 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: transparent;
+  color: var(--pencil);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.rowHint {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .row:hover {
+    background: var(--hover);
+  }
+
+  .row:hover .rowHint {
+    opacity: 1;
+  }
+}
+
+.row:active {
+  background: var(--press);
+}
+
+.row:active .rowHint,
+.row:focus-visible .rowHint {
+  opacity: 1;
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .rowHint {
+    transition: none;
+  }
+}
+
+/* ---------- week grid (달력 › 주) borrows these blocks in narrow columns ---------- */
+
+.compact {
+  padding: 2px 3px 2px 4px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.compact.work {
+  padding-left: 7px;
+}
+
+/* Narrow columns: the title wraps by letter instead of trailing off after one. */
+.compactTitle {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }

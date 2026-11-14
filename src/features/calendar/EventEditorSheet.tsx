@@ -6,11 +6,11 @@ import { ConnectPersonalHint } from "@/features/shell/ConnectPersonalHint";
 import { NETWORK_ERROR, serverMessage } from "@/features/shell/errors";
 import { emitDataChanged } from "@/features/shell/events";
 import { usePersonalConnected } from "@/features/shell/personalConnection";
-import { nextFullHourSlot, seoulIso } from "@/features/shell/slots";
+import { nextFullHourSlot } from "@/features/shell/slots";
 import { daysBetween, seoulOf } from "@/features/today/eventUtils";
-import type { CalendarEvent, NewPersonalEvent } from "@/shared/contracts";
-import { addDays } from "@/shared/time";
+import type { CalendarEvent } from "@/shared/contracts";
 import { Button, Sheet } from "@/ui/primitives";
+import { buildEventInput, oneHourAfter, type EventFormState } from "./eventForm";
 import styles from "./EventEditorSheet.module.css";
 
 export interface EventEditorSheetProps {
@@ -21,22 +21,20 @@ export interface EventEditorSheetProps {
   /** New event only: prefilled title (quick add "자세히") and date. */
   initialTitle?: string;
   initialDate?: string;
+  /**
+   * New event only: prefilled start and end ('HH:MM', Seoul), e.g. from a tapped
+   * hour on the time ruler. Without an end the event lasts one hour; without
+   * either it starts at the next full hour.
+   */
+  initialStartTime?: string;
+  initialEndTime?: string;
   /** After a successful save (the sheet closes itself via onClose too). */
   onSaved?: () => void;
 }
 
-interface FormState {
-  title: string;
-  date: string;
-  allDay: boolean;
-  startTime: string;
-  endTime: string;
-  /** Days between start and end date (keeps multi-day events intact when editing). */
-  spanDays: number;
-  memo: string;
-}
+type InitialValues = Pick<EventEditorSheetProps, "initialTitle" | "initialDate" | "initialStartTime" | "initialEndTime">;
 
-function initialState(event: CalendarEvent | null | undefined, initialTitle?: string, initialDate?: string): FormState {
+function initialState(event: CalendarEvent | null | undefined, initial: InitialValues): EventFormState {
   if (event) {
     if (event.allDay) {
       const date = event.start.slice(0, 10);
@@ -57,66 +55,32 @@ function initialState(event: CalendarEvent | null | undefined, initialTitle?: st
     };
   }
   const slot = nextFullHourSlot();
-  const date = initialDate ?? slot.date;
+  const startTime = initial.initialStartTime ?? slot.startTime;
   return {
-    title: initialTitle ?? "",
-    date,
+    title: initial.initialTitle ?? "",
+    date: initial.initialDate ?? slot.date,
     allDay: false,
-    startTime: slot.startTime,
-    endTime: slot.endTime,
-    // 23:00 → 00:00 ends on the next day.
-    spanDays: slot.endTime <= slot.startTime ? 1 : 0,
+    startTime,
+    endTime: initial.initialEndTime ?? (initial.initialStartTime ? oneHourAfter(startTime) : slot.endTime),
+    // Same day; an end of 00:00 (e.g. 23:00–00:00) is read as midnight the next day.
+    spanDays: 0,
     memo: "",
   };
 }
 
-/** Validates the form and builds the API body, or returns a sentence saying what to fix. */
-export function buildEventInput(form: FormState): NewPersonalEvent | { error: string } {
-  const title = form.title.trim();
-  if (!title) return { error: "제목을 적어 주세요." };
-  if (!form.date) return { error: "날짜를 골라 주세요." };
-  if (form.allDay) {
-    return { title, start: form.date, end: addDays(form.date, Math.max(1, form.spanDays)), allDay: true };
-  }
-  if (!form.startTime || !form.endTime) return { error: "시작 시간과 끝나는 시간을 골라 주세요." };
-  let span = form.spanDays;
-  if (span === 0 && form.endTime <= form.startTime) {
-    if (form.endTime === "00:00") span = 1;
-    else return { error: "끝나는 시간은 시작 시간보다 늦어야 해요." };
-  }
-  return {
-    title,
-    start: seoulIso(form.date, form.startTime),
-    end: seoulIso(addDays(form.date, span), form.endTime),
-    allDay: false,
-  };
-}
-
 /** Create or edit a personal event (title, date, start/end or all-day, memo). */
-export function EventEditorSheet({ open, event, onClose, initialTitle, initialDate, onSaved }: EventEditorSheetProps) {
+export function EventEditorSheet({ open, event, onClose, onSaved, ...initial }: EventEditorSheetProps) {
   return (
     <Sheet open={open} onClose={onClose} title={event ? "일정 고치기" : "새 일정"}>
-      <EventEditorForm
-        event={event}
-        initialTitle={initialTitle}
-        initialDate={initialDate}
-        onClose={onClose}
-        onSaved={onSaved}
-      />
+      <EventEditorForm event={event} onClose={onClose} onSaved={onSaved} {...initial} />
     </Sheet>
   );
 }
 
-function EventEditorForm({
-  event,
-  initialTitle,
-  initialDate,
-  onClose,
-  onSaved,
-}: Omit<EventEditorSheetProps, "open">) {
+function EventEditorForm({ event, onClose, onSaved, ...initial }: Omit<EventEditorSheetProps, "open">) {
   const isNew = !event;
   const personalConnected = usePersonalConnected(isNew);
-  const [form, setForm] = useState<FormState>(() => initialState(event, initialTitle, initialDate));
+  const [form, setForm] = useState<EventFormState>(() => initialState(event, initial));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const id = useId();
@@ -125,7 +89,8 @@ function EventEditorForm({
     return <ConnectPersonalHint className={styles.hint} />;
   }
 
-  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const set = <K extends keyof EventFormState>(key: K, value: EventFormState[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
 
   async function submit(e: FormEvent) {
     e.preventDefault();

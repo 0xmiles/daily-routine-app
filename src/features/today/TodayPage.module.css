@@ -140,7 +140,6 @@
   color: var(--pencil);
 }
 
-.list,
 .todoList {
   margin: 0;
   padding: 0;
@@ -210,12 +209,6 @@
   color: var(--ink);
 }
 
-@media (max-width: 899.98px) {
-  .desktopOnly {
-    display: none;
-  }
-}
-
 /* ---------- Mac: leaf | time ruler | todos ---------- */
 
 @media (min-width: 900px) {
@@ -264,10 +257,6 @@
 
   .todoCol .dayTodos .secHead {
     padding-top: 0;
-  }
-
-  .mobileOnly {
-    display: none;
   }
 }
 

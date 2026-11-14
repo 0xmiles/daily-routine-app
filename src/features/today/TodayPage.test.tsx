@@ -39,7 +39,7 @@ vi.mock("@/features/todos/TodoRow", () => ({
   TodoRow: ({ todo }: { todo: Todo }) => <li>{todo.title}</li>,
 }));
 
-import { fetchEvents } from "@/features/calendar/client";
+import { createEvent, fetchEvents } from "@/features/calendar/client";
 import { fetchEventKeys } from "@/features/memo/client";
 import { fetchTodos } from "@/features/todos/client";
 import { TodayPage } from "./TodayPage";
@@ -130,21 +130,22 @@ describe("TodayPage", () => {
     }
   });
 
-  it("lists events with time, place and tag; busy-only shows 바쁨 and memo mark shows", async () => {
-    respond([busy, brunch]);
+  it("phones get the time ruler too: blocks show time, place and tag; busy-only shows 바쁨 and memo mark shows", async () => {
+    respond([busy, brunch]); // beforeEach: narrow screen
     vi.mocked(fetchEventKeys).mockResolvedValue(["primary:p1"]);
     render(<TodayPage initialDate="2026-11-14" today="2026-11-14" />);
 
-    const row = (await screen.findByText("브런치")).closest("button") as HTMLElement;
-    expect(within(row).getByText("12:00")).toBeTruthy();
-    expect(within(row).getByText("연남동")).toBeTruthy();
-    expect(within(row).getByText("개인")).toBeTruthy();
-    await waitFor(() => expect(within(row).getByText("메모")).toBeTruthy());
+    const block = (await screen.findByText("브런치")).closest("button") as HTMLElement;
+    expect(within(block).getByText("12:00–13:00")).toBeTruthy();
+    expect(within(block).getByText("연남동")).toBeTruthy();
+    expect(within(block).getByText("개인")).toBeTruthy();
+    await waitFor(() => expect(within(block).getByText("메모")).toBeTruthy());
 
-    const busyRow = screen.getByText("바쁨").closest("button") as HTMLElement;
-    expect(within(busyRow).getByText("15:00")).toBeTruthy();
-    expect(within(busyRow).getByText("회사")).toBeTruthy();
-    expect(within(busyRow).queryByText("메모")).toBeNull();
+    const busyBlock = screen.getByText("바쁨").closest("button") as HTMLElement;
+    expect(within(busyBlock).getByText("15:00–16:00")).toBeTruthy();
+    expect(within(busyBlock).getByText("회사")).toBeTruthy();
+    expect(within(busyBlock).queryByText("메모")).toBeNull();
+    expect(screen.getByRole("toolbar", { name: "빈 시간에 새 일정 만들기" })).toBeTruthy();
     expect(fetchEvents).toHaveBeenCalledWith("2026-11-14", "2026-11-14");
   });
 
@@ -159,10 +160,47 @@ describe("TodayPage", () => {
     expect(screen.getByRole("region", { name: "오늘 할 일" })).toBeTruthy();
   });
 
-  it("empty day says so", async () => {
+  it("empty day says so, and that an hour can be tapped", async () => {
     respond([]);
     render(<TodayPage initialDate="2026-11-14" today="2026-11-14" />);
     expect(await screen.findByText("오늘은 일정이 없어요.")).toBeTruthy();
+    expect(screen.getByText("시간대를 누르면 그 시간에 새 일정을 만들어요.")).toBeTruthy();
+  });
+
+  it("tapping an empty hour opens a new event on that day at that hour, and the day reloads after saving", async () => {
+    respond([brunch]);
+    render(<TodayPage initialDate="2026-11-16" today="2026-11-14" />);
+    await screen.findByText("이날은 일정이 없어요.");
+    const loads = vi.mocked(fetchEvents).mock.calls.length;
+
+    await userEvent.click(screen.getByRole("button", { name: "15:00에 새 일정 만들기" }));
+    const dialog = screen.getByRole("dialog", { name: "새 일정" });
+    expect((within(dialog).getByLabelText("날짜") as HTMLInputElement).value).toBe("2026-11-16");
+    expect((within(dialog).getByLabelText("시작") as HTMLInputElement).value).toBe("15:00");
+    expect((within(dialog).getByLabelText("끝") as HTMLInputElement).value).toBe("16:00");
+
+    await userEvent.type(within(dialog).getByLabelText("제목"), "치과");
+    await userEvent.click(within(dialog).getByRole("button", { name: "일정 만들기" }));
+    expect(createEvent).toHaveBeenCalledWith({
+      title: "치과",
+      start: "2026-11-16T15:00:00+09:00",
+      end: "2026-11-16T16:00:00+09:00",
+      allDay: false,
+    });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "새 일정" })).toBeNull());
+    await waitFor(() => expect(vi.mocked(fetchEvents).mock.calls.length).toBeGreaterThan(loads));
+    expect(fetchEvents).toHaveBeenLastCalledWith("2026-11-16", "2026-11-16");
+  });
+
+  it("an hour tap without a personal calendar asks to connect it instead of showing the form", async () => {
+    respond([], { personalConnected: false });
+    render(<TodayPage initialDate="2026-11-14" today="2026-11-14" />);
+    await screen.findByText("오늘은 일정이 없어요.");
+    expect(screen.queryByText("시간대를 누르면 그 시간에 새 일정을 만들어요.")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "10:00에 새 일정 만들기" }));
+    const dialog = screen.getByRole("dialog", { name: "새 일정" });
+    expect(within(dialog).getByText(/개인 캘린더를 연결하면 새 일정을 추가할 수 있어요\./)).toBeTruthy();
+    expect(within(dialog).queryByLabelText("제목")).toBeNull();
   });
 
   it("without a personal calendar it still shows work events and a quiet connect line", async () => {
@@ -197,6 +235,18 @@ describe("TodayPage", () => {
     fireEvent.touchStart(page, { touches: [{ clientX: 300, clientY: 200 }] });
     fireEvent.touchEnd(page, { changedTouches: [{ clientX: 180, clientY: 210 }] });
     await waitFor(() => expect(window.location.search).toBe("?date=2026-11-15"));
+  });
+
+  it("a swipe that starts on an hour row still turns the page and opens nothing", async () => {
+    respond([]);
+    render(<TodayPage initialDate="2026-11-14" today="2026-11-14" />);
+    await screen.findByText("오늘은 일정이 없어요.");
+    const row = screen.getByRole("button", { name: "13:00에 새 일정 만들기" });
+    fireEvent.touchStart(row, { touches: [{ clientX: 300, clientY: 200 }] });
+    const notPrevented = fireEvent.touchEnd(row, { changedTouches: [{ clientX: 180, clientY: 205 }] });
+    expect(notPrevented).toBe(false); // the swipe swallows the tap
+    await waitFor(() => expect(window.location.search).toBe("?date=2026-11-15"));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("a holiday turns the leaf red and is not listed as an event", async () => {
