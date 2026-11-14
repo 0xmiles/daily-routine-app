@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>일력 & 통장 최종 시안</title>
+<style>:root{--bg-primary:#f5f5f7;--bg-secondary:#fff;--bg-tertiary:#e5e5e7;--border:#d1d1d6;--text-primary:#1d1d1f;--text-secondary:#6e6e73;--accent:#0071e3;--selected-bg:#e8f4fd;--selected-border:#0071e3}body{margin:0;padding:24px;background:var(--bg-primary);color:var(--text-primary);font-family:system-ui,-apple-system,sans-serif}.subtitle{color:var(--text-secondary)}</style></head><body>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+  /* ---------- tokens ---------- */
+  .ilr{--paper:#F7F7F4;--sheet:#FFFFFF;--ink:#1F2533;--pencil:#6E737D;--rule:#E3E3DE;--sun:#D7263D;--sat:#2D5BD7;--marker:#FFE76A;--passbook:#E8F0EA}
+  .ilr .num{font-family:'Archivo',sans-serif;font-variant-numeric:tabular-nums lining-nums;letter-spacing:0}
+  .ilr .kr{font-family:'IBM Plex Sans KR',sans-serif}
+  .ilr svg{display:block}
+  .hl{background:linear-gradient(transparent 52%,var(--marker) 52%,var(--marker) 94%,transparent 94%);padding:0 2px}
+
+  /* ---------- plan panel ---------- */
+  .plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin:1rem 0 1.8rem}
+  .plan .box{background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:.84rem;line-height:1.55}
+  .plan h4{margin:0 0 8px;font-size:.92rem}
+  .sw{display:grid;grid-template-columns:28px 1fr;gap:6px 10px;align-items:center}
+  .sw i{width:28px;height:20px;border-radius:5px;display:block;border:1px solid rgba(0,0,0,.1)}
+  .sw span{color:var(--text-secondary)}
+  .sw b{color:var(--text-primary);font-weight:600}
+  .spec .big{font-family:'Archivo';font-variation-settings:'wdth' 62;font-weight:800;font-size:64px;line-height:.85;color:#2D5BD7}
+  .spec .kr{font-size:15px;margin-top:6px}
+  .plan ul{margin:0;padding-left:1.1em;color:var(--text-secondary)}
+  .plan li{margin:3px 0}
+  .plan li b{color:var(--text-primary)}
+
+  /* ---------- phone ---------- */
+  .phs{display:grid;grid-template-columns:repeat(auto-fit,minmax(296px,1fr));gap:1.6rem}
+  .ph{width:282px;height:592px;margin:0 auto;border-radius:44px;border:8px solid #15181f;position:relative;overflow:hidden;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans KR',sans-serif;box-shadow:0 22px 48px rgba(31,37,51,.22);letter-spacing:-.01em}
+  .ph *{box-sizing:border-box}
+  .ph .sb{height:40px;display:flex;align-items:center;padding:0 22px;font-size:13px;font-weight:600;position:relative}
+  .ph .isl{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:84px;height:24px;border-radius:14px;background:#000}
+  .cap{padding:12px 6px 0;font-size:.84rem;line-height:1.55}
+  .cap h3{margin:0 0 4px;font-size:1rem}
+  .cap ul{margin:4px 0 0;padding-left:1.1em;color:var(--text-secondary)}
+  .cap li{margin:2px 0}
+
+  /* today: 일력 page */
+  .pg{padding:2px 20px 10px}
+  .pg .ym{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}
+  .pg .ym .y{color:var(--pencil)}
+  .pg .ym .wd{color:var(--sat);font-weight:600}
+  .pg .date{font-family:'Archivo';font-variation-settings:'wdth' 62;font-weight:800;font-size:122px;font-stretch:62%;line-height:.78;letter-spacing:-.02em;color:var(--sat);margin:8px 0 6px -3px}
+  .pg .sum{font-size:12.5px;color:var(--pencil)}
+  .pg .sum b{color:var(--ink);font-weight:600}
+  .perf{height:0;border-top:1.6px dashed #C9CAC4;margin:0 12px;position:relative}
+  .perf:before,.perf:after{content:"";position:absolute;top:-7px;width:12px;height:12px;border-radius:50%;background:#15181f}
+  .perf:before{left:-19px}.perf:after{right:-19px}
+  .seg{display:flex;gap:18px;padding:10px 20px 4px;font-size:13.5px;color:var(--pencil)}
+  .seg .on{color:var(--ink);font-weight:600}
+  .sec{display:flex;justify-content:space-between;align-items:baseline;padding:8px 20px 2px;font-size:12px;font-weight:600}
+  .sec .c{color:var(--pencil);font-weight:400}
+  .ev{display:grid;grid-template-columns:44px 1fr auto;gap:8px;padding:5px 20px;align-items:start;font-size:13.5px}
+  .ev .t{font-size:13px;color:var(--ink);font-weight:500;padding-top:1px}
+  .ev .p{display:block;font-size:11px;color:var(--pencil);margin-top:1px}
+  .tag{font-size:10.5px;padding:2px 7px;border-radius:4px;font-weight:500;white-space:nowrap}
+  .tag-w{background:var(--ink);color:var(--paper)}
+  .tag-p{box-shadow:inset 0 0 0 1.2px var(--ink)}
+  .td{display:grid;grid-template-columns:16px 1fr auto;gap:10px;padding:6px 20px;align-items:center;font-size:13.5px}
+  .cb{width:15px;height:15px;border:1.5px solid var(--ink);border-radius:4px}
+  .late{color:var(--sun);font-size:11.5px;font-weight:600}
+  .meta{font-size:11.5px;color:var(--pencil)}
+  .tabs{position:absolute;left:0;right:0;bottom:0;height:66px;border-top:1px solid var(--rule);background:var(--paper);display:flex;padding:8px 76px 16px 10px}
+  .tabs div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--pencil)}
+  .tabs .on{color:var(--ink);font-weight:600}
+  .fab{position:absolute;right:16px;bottom:14px;width:50px;height:50px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(31,37,51,.25)}
+
+  /* calendar */
+  .ch{padding:2px 20px 0;display:flex;justify-content:space-between;align-items:flex-end}
+  .ch .m{font-family:'Archivo';font-variation-settings:'wdth' 62;font-stretch:62%;font-weight:800;font-size:64px;line-height:.85}
+  .ch .y{font-size:12.5px;color:var(--pencil);margin-bottom:4px}
+  .ch .arr{display:flex;gap:4px;margin-bottom:6px}
+  .ch .arr span{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);padding:6px 10px 0;text-align:center}
+  .grid .w{font-size:11px;color:var(--pencil);padding:4px 0 4px}
+  .grid .d{height:40px;display:flex;flex-direction:column;align-items:center;gap:2px;padding-top:3px}
+  .grid .d .n{font-family:'Archivo';font-variant-numeric:tabular-nums;font-size:14px;font-weight:500;width:26px;height:26px;display:flex;align-items:center;justify-content:center}
+  .grid .su{color:var(--sun)}
+  .grid .sa{color:var(--sat)}
+  .grid .x{opacity:.32}
+  .grid .today .n{background:var(--marker);border-radius:48% 52% 46% 54%;font-weight:700}
+  .mk{display:flex;gap:2px;height:5px}
+  .mk i{display:block;width:5px;height:5px;border-radius:50%}
+  .mk .w{background:var(--ink)}
+  .mk .p{box-shadow:inset 0 0 0 1.2px var(--ink)}
+  .mk .dl{background:var(--sun);border-radius:1px}
+  .lg{display:flex;gap:12px;padding:4px 20px 6px;font-size:10.5px;color:var(--pencil);align-items:center}
+  .lg i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:1px}
+  .agh{border-top:1px solid var(--rule);margin-top:2px}
+
+  /* memo */
+  .mh{padding:2px 20px 6px;display:flex;justify-content:space-between;align-items:center}
+  .mh h2{margin:0;font-size:22px;font-weight:700;letter-spacing:-.03em}
+  .mb{padding:0 20px}
+  .evl{margin:6px 0 6px;padding:8px 10px;border-radius:8px;box-shadow:inset 0 0 0 1.3px var(--ink);background:var(--sheet)}
+  .evl .a{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+  .evl .b{display:flex;justify-content:space-between;font-size:11px;color:var(--pencil);margin-top:3px}
+  .evl .b u{text-decoration:none;color:var(--sat);font-weight:500}
+  .ln{font-size:13.5px;line-height:1.8;white-space:nowrap}
+  .ln .g{display:inline-block;width:16px;height:22px;vertical-align:top;border-left:1px solid #D7D8D2;margin-left:3px}
+  .ln .bul{color:var(--pencil);margin-right:6px}
+  .ln b{font-weight:700}
+  .cur{background:linear-gradient(90deg,rgba(255,231,106,.75),rgba(255,231,106,.15));margin:0 -20px;padding:0 20px}
+  .caret{display:inline-block;width:2px;height:16px;background:var(--ink);vertical-align:-3px}
+  .bsep{display:flex;align-items:center;gap:8px;margin:12px 0 4px;font-size:11px;color:var(--pencil)}
+  .bsep:after{content:"";flex:1;height:1px;background:var(--rule)}
+  .fd{color:#A4A7AD}
+  .tb{position:absolute;left:0;right:0;bottom:170px;height:44px;background:var(--paper);border-top:1px solid var(--rule);display:flex;align-items:center;padding:0 8px;gap:2px}
+  .tb div{flex:1;height:34px;display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:12px}
+  .tb .done{flex:none;padding:0 14px;border-radius:8px;background:var(--ink);color:var(--paper);font-weight:600}
+  .kb{position:absolute;left:0;right:0;bottom:0;height:170px;background:#D5D6D1;padding:8px 4px;display:grid;grid-template-rows:repeat(4,1fr);gap:7px}
+  .kb .kr2{display:flex;gap:4px;justify-content:center}
+  .kb .kr2 i{flex:1;max-width:24px;background:#FCFCFA;border-radius:5px;box-shadow:0 1px 0 rgba(0,0,0,.15)}
+  .kb .kr2 i.wide{max-width:none;flex:5}
+  .kb .kr2 i.mid{max-width:40px;background:#BBBCB6}
+
+  /* assets / passbook */
+  .ah{padding:2px 20px 0}
+  .ah h2{margin:0 0 6px;font-size:22px;font-weight:700;letter-spacing:-.03em}
+  .ah .s{font-size:13px;line-height:1.55}
+  .ah .s .num{font-weight:700;font-size:15px}
+  .acs{display:flex;gap:6px;padding:12px 20px 8px}
+  .acs span{font-size:12px;padding:5px 10px;border-radius:999px;box-shadow:inset 0 0 0 1.2px var(--rule);color:var(--pencil)}
+  .acs .on{background:var(--ink);color:var(--paper);box-shadow:none;font-weight:500}
+  .pb{margin:0 12px;border-radius:6px;background:var(--passbook);background-image:repeating-linear-gradient(transparent 0 25px,rgba(31,37,51,.06) 25px 26px);padding:8px 8px 6px;position:relative}
+  .pb .ttl{display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;padding:0 2px 6px;border-bottom:1.2px solid rgba(31,37,51,.35)}
+  .pb .ttl span:last-child{font-weight:400;color:var(--pencil)}
+  .pr{display:grid;grid-template-columns:30px 1fr 50px 52px 54px;gap:3px;align-items:center;height:26px;font-size:10.5px}
+  .pr .num{font-variation-settings:'wdth' 78;text-align:right;font-size:11px}
+  .pr.h{font-size:9.5px;color:var(--pencil);height:22px}
+  .pr.h span{text-align:right}
+  .pr.h span:nth-child(1),.pr.h span:nth-child(2){text-align:left}
+  .pr .x{color:var(--pencil)}
+  .pr .ds{white-space:nowrap;overflow:hidden;text-overflow:clip}
+  .pr .it{font-size:9px;color:var(--pencil);margin-left:3px}
+  .stale{margin:10px 20px 0;font-size:12px;line-height:1.5}
+  .stale b{color:var(--sun);font-weight:600}
+  .stale u{color:var(--sat);text-decoration:none;font-weight:500}
+  .upl{margin:10px 20px 0;height:38px;border-radius:8px;box-shadow:inset 0 0 0 1.3px var(--ink);display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;font-weight:600}
+
+  /* mac */
+  .mac{max-width:1000px;margin:2.2rem auto 0;border-radius:14px;overflow:hidden;border:1px solid rgba(0,0,0,.15);box-shadow:0 30px 60px rgba(31,37,51,.2);background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans KR',sans-serif;letter-spacing:-.01em}
+  .mac *{box-sizing:border-box}
+  .mac .bar{height:32px;background:#E9E9E5;display:flex;align-items:center;gap:7px;padding:0 14px}
+  .mac .bar i{width:11px;height:11px;border-radius:50%;display:block}
+  .mac .tp{display:flex;align-items:center;gap:12px;padding:12px 22px;border-bottom:1px solid var(--rule)}
+  .mac .ham{width:32px;height:32px;border-radius:8px;box-shadow:inset 0 0 0 1.2px var(--ink);display:flex;align-items:center;justify-content:center}
+  .mac .tp .seg{padding:0;margin-left:6px}
+  .mac .tp .new{margin-left:auto;background:var(--ink);color:var(--paper);border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:600;display:flex;gap:8px;align-items:center}
+  .mac .tp .new kbd{font-family:'Archivo';font-size:10.5px;opacity:.7}
+  .mac .bd{display:grid;grid-template-columns:270px 1fr 1fr;height:430px}
+  .mac .leaf{padding:20px 22px;border-right:1.6px dashed #C9CAC4}
+  .mac .leaf .date{font-family:'Archivo';font-variation-settings:'wdth' 62;font-weight:800;font-size:210px;font-stretch:62%;line-height:.78;color:var(--sat);margin:14px 0 14px -6px;letter-spacing:-.02em}
+  .mac .leaf .ym{display:flex;justify-content:space-between;font-size:14px}
+  .mac .leaf .ym .wd{color:var(--sat);font-weight:600}
+  .mac .leaf .sum{font-size:13px;color:var(--pencil);line-height:1.6}
+  .mac .leaf .sum b{color:var(--ink);font-weight:600}
+  .mac .col{padding:16px 10px 0}
+  .mac .tl{position:relative;margin:6px 10px 0 54px;height:340px;border-left:1px solid var(--rule)}
+  .mac .tl .h{position:absolute;left:-46px;width:38px;text-align:right;font-size:11.5px;color:var(--pencil)}
+  .mac .tl .l{position:absolute;left:0;right:0;border-top:1px solid #EDEDE9}
+  .mac .tl .now{position:absolute;left:-4px;right:0;border-top:2px solid var(--sun)}
+  .mac .tl .now:before{content:"";position:absolute;left:-4px;top:-5px;width:8px;height:8px;border-radius:50%;background:var(--sun)}
+  .mac .tl .e{position:absolute;left:8px;right:6px;border-radius:6px;padding:6px 10px;font-size:12.5px;box-shadow:inset 0 0 0 1.3px var(--ink);background:var(--sheet)}
+  .mac .tl .e small{display:block;color:var(--pencil);font-size:11px}
+  .foot{margin-top:1.8rem;padding:14px 16px;border-radius:12px;background:var(--bg-secondary);border:1px solid var(--border);font-size:.87rem;line-height:1.65}
+</style>
+
+<div class="ilr">
+
+<h2>잉크 &amp; 라임 → 일력 &amp; 통장</h2>
+<p class="subtitle">1번의 성격(흑백 바탕에 한 색 강조, 큰 날짜)은 그대로 두고, 흔한 장식 대신 이 앱의 실제 소재인 <b>일력</b>과 <b>통장</b>에서 디자인을 가져왔어요.</p>
+
+<div class="plan">
+  <div class="box">
+    <h4>색</h4>
+    <div class="sw">
+      <i style="background:#F7F7F4"></i><span><b>종이</b> 바탕</span>
+      <i style="background:#1F2533"></i><span><b>블루블랙 잉크</b> 글자, 회사 일정</span>
+      <i style="background:#6E737D"></i><span><b>연필</b> 보조 글자</span>
+      <i style="background:#D7263D"></i><span><b>일요일 빨강</b> 일요일, 늦음, 오래됨</span>
+      <i style="background:#2D5BD7"></i><span><b>토요일 파랑</b> 토요일, 링크</span>
+      <i style="background:#FFE76A"></i><span><b>형광펜</b> 오늘, 지금 쓰는 줄</span>
+    </div>
+  </div>
+  <div class="box spec">
+    <h4>글꼴</h4>
+    <div class="big">14</div>
+    <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">Archivo 좁은 폭: 날짜와 모든 숫자 (자릿수 정렬)</div>
+    <div class="kr">주간 회의 안건 정리하기</div>
+    <div style="font-size:12px;color:var(--text-secondary)">IBM Plex Sans KR: 본문</div>
+  </div>
+  <div class="box">
+    <h4>1번에서 바꾼 것</h4>
+    <ul>
+      <li><b>형광 라임</b>을 형광펜 노랑으로. 버튼 색이 아니라 밑줄처럼 칠해요</li>
+      <li><b>먹색 #121212</b>를 만년필 블루블랙 잉크로</li>
+      <li><b>영문 대문자 라벨</b>(SCHEDULE 등)은 없애거나 한글 제목으로</li>
+      <li><b>고정폭 글꼴</b> 대신 Archivo 숫자로 자릿수 정렬</li>
+      <li><b>가운뎃점으로 이은 정보</b>는 줄을 나눠서 보여줌</li>
+      <li>자산은 <b>통장 형식</b>(찾으신 금액, 맡기신 금액, 잔액)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="phs">
+
+<!-- ================= TODAY (일력) ================= -->
+<div>
+  <div class="ph">
+    <div class="sb"><span class="num">9:41</span><div class="isl"></div></div>
+    <div class="pg">
+      <div class="ym"><span><span class="y num">2026</span>&nbsp; 11월</span><span class="wd">토요일</span></div>
+      <div class="date">14</div>
+      <div class="sum">일정 <b>2</b>개, 할 일 <b>4</b>개 중 <b>1</b>개 끝냄</div>
+    </div>
+    <div class="perf"></div>
+    <div class="seg"><span class="on hl">오늘</span><span>달력</span><span>목록</span></div>
+    <div class="sec"><span>일정</span></div>
+    <div class="ev"><span class="t num">12:00</span><span>브런치<span class="p">연남동</span></span><span class="tag tag-p">개인</span></div>
+    <div class="ev"><span class="t num">19:00</span><span>저녁 약속<span class="p">성수동</span></span><span class="tag tag-p">개인</span></div>
+    <div class="sec"><span>할 일</span></div>
+    <div class="td"><span class="cb" style="border-color:var(--sun)"></span><span>보고서 제출</span><span class="late">어제까지</span></div>
+    <div class="td"><span class="cb"></span><span>PR 리뷰</span><span class="meta"><span class="num">16일 18:00</span></span></div>
+    <div class="td"><span class="cb"></span><span>운동</span><span class="meta">매주 토</span></div>
+    <div class="tabs">
+      <div class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="hl">할 일</span></div>
+      <div><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>메모</div>
+      <div><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg>자산</div>
+    </div>
+    <div class="fab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+  </div>
+  <div class="cap"><h3>오늘: 일력 한 장</h3><ul><li>오늘이 토요일이라 날짜가 파랑. 일요일엔 빨강, 평일엔 잉크색</li><li>점선은 일력을 뜯는 자리. 옆으로 밀면 어제와 내일로 넘어감</li><li>선택된 탭은 형광펜으로 칠한 듯 표시</li></ul></div>
+</div>
+
+<!-- ================= CALENDAR ================= -->
+<div>
+  <div class="ph">
+    <div class="sb"><span class="num">9:41</span><div class="isl"></div></div>
+    <div class="ch">
+      <div><div class="y num">2026년</div><div class="m">11월</div></div>
+      <div class="arr">
+        <span aria-label="이전 달"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></span>
+        <span aria-label="다음 달"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
+      </div>
+    </div>
+    <div class="seg"><span>오늘</span><span class="on hl">달력</span><span>목록</span></div>
+    <div class="grid">
+      <div class="w su">일</div><div class="w">월</div><div class="w">화</div><div class="w">수</div><div class="w">목</div><div class="w">금</div><div class="w sa">토</div>
+      <div class="d su"><span class="n">1</span><span class="mk"></span></div>
+      <div class="d"><span class="n">2</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">3</span><span class="mk"><i class="w"></i><i class="w"></i></span></div>
+      <div class="d"><span class="n">4</span><span class="mk"></span></div>
+      <div class="d"><span class="n">5</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">6</span><span class="mk"><i class="w"></i><i class="dl"></i></span></div>
+      <div class="d sa"><span class="n">7</span><span class="mk"><i class="p"></i></span></div>
+      <div class="d su"><span class="n">8</span><span class="mk"></span></div>
+      <div class="d"><span class="n">9</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">10</span><span class="mk"><i class="w"></i><i class="w"></i></span></div>
+      <div class="d"><span class="n">11</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">12</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">13</span><span class="mk"><i class="w"></i><i class="dl"></i></span></div>
+      <div class="d sa today"><span class="n">14</span><span class="mk"><i class="p"></i><i class="p"></i></span></div>
+      <div class="d su"><span class="n">15</span><span class="mk"><i class="p"></i></span></div>
+      <div class="d"><span class="n">16</span><span class="mk"><i class="w"></i><i class="w"></i><i class="dl"></i></span></div>
+      <div class="d"><span class="n">17</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">18</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">19</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">20</span><span class="mk"><i class="w"></i><i class="p"></i></span></div>
+      <div class="d sa"><span class="n">21</span><span class="mk"><i class="p"></i></span></div>
+      <div class="d su"><span class="n">22</span><span class="mk"></span></div>
+      <div class="d"><span class="n">23</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">24</span><span class="mk"><i class="w"></i><i class="w"></i></span></div>
+      <div class="d"><span class="n">25</span><span class="mk"><i class="dl"></i></span></div>
+      <div class="d"><span class="n">26</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d"><span class="n">27</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d sa"><span class="n">28</span><span class="mk"><i class="p"></i></span></div>
+      <div class="d su"><span class="n">29</span><span class="mk"></span></div>
+      <div class="d"><span class="n">30</span><span class="mk"><i class="w"></i></span></div>
+      <div class="d x"><span class="n">1</span></div><div class="d x"><span class="n">2</span></div><div class="d x"><span class="n">3</span></div><div class="d x"><span class="n">4</span></div><div class="d x sa"><span class="n">5</span></div>
+    </div>
+    <div class="lg"><span><i style="background:var(--ink)"></i>회사</span><span><i style="box-shadow:inset 0 0 0 1.2px var(--ink)"></i>개인</span><span><i style="background:var(--sun);border-radius:1px"></i>할 일 마감</span></div>
+    <div class="agh"></div>
+    <div class="sec"><span>14일 토요일</span><span class="c">일정 2개</span></div>
+    <div class="ev"><span class="t num">12:00</span><span>브런치<span class="p">연남동</span></span><span class="tag tag-p">개인</span></div>
+    <div class="tabs">
+      <div class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="hl">할 일</span></div>
+      <div><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>메모</div>
+      <div><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg>자산</div>
+    </div>
+    <div class="fab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+  </div>
+  <div class="cap"><h3>달력: 벽걸이 달력 규칙 그대로</h3><ul><li>일요일 열은 빨강, 토요일 열은 파랑. 공휴일도 빨강</li><li>오늘은 형광펜으로 동그라미 친 것처럼</li><li>점은 회사(채움) · 개인(테두리), 빨간 네모는 할 일 마감</li></ul></div>
+</div>
+
+<!-- ================= MEMO ================= -->
+<div>
+  <div class="ph">
+    <div class="sb"><span class="num">9:41</span><div class="isl"></div></div>
+    <div class="mh"><h2>메모</h2><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+    <div class="mb">
+      <div class="evl">
+        <div class="a"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>주간 회의<span class="tag tag-w" style="margin-left:auto">회사</span></div>
+        <div class="b"><span><span class="num">11월 16일 월요일 10:00–11:00</span></span><u>일정 보기</u></div>
+      </div>
+      <div class="ln"><span class="bul">-</span><b>결정한 것</b></div>
+      <div class="ln"><span class="g"></span><span class="bul">-</span>릴리즈 노트는 화요일까지</div>
+      <div class="ln cur"><span class="g"></span><span class="bul">-</span><span class="caret"></span></div>
+      <div class="bsep"><span>11월 14일 오전 9:12</span></div>
+      <div class="ln fd"><b>주간 회의</b> 안건</div>
+      <div class="ln fd"><span class="bul">-</span>배포 일정</div>
+    </div>
+    <div class="tb">
+      <div aria-label="들여쓰기"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M11 12h10M11 18h10"/><path d="M3 10l4 3-4 3"/></svg></div>
+      <div aria-label="내어쓰기"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M11 12h10M11 18h10"/><path d="M7 10l-4 3 4 3"/></svg></div>
+      <div style="font-weight:800;font-size:16px">B</div>
+      <div aria-label="새 블록"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18"/><path d="M12 15v6M9 18h6"/><path d="M3 4h18"/></svg></div>
+      <div class="done">완료</div>
+    </div>
+    <div class="kb">
+      <div class="kr2"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="kr2"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="kr2"><i class="mid"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="mid"></i></div>
+      <div class="kr2"><i class="mid"></i><i class="mid"></i><i class="wide"></i><i class="mid"></i></div>
+    </div>
+  </div>
+  <div class="cap"><h3>메모: 일정에서 만든 블록</h3><ul><li>블록 방식 확정. 일정 이름표가 블록 맨 위에, "일정 보기"로 되돌아감</li><li>지금 쓰는 줄만 형광펜. 지난 블록은 흐리게</li><li>블록 구분선엔 작성 시각을 문장처럼 표기</li></ul></div>
+</div>
+
+<!-- ================= ASSETS (통장) ================= -->
+<div>
+  <div class="ph">
+    <div class="sb"><span class="num">9:41</span><div class="isl"></div></div>
+    <div class="ah">
+      <h2>자산</h2>
+      <div class="s">세 계좌를 합치면 <span class="num">23,480,000</span>원이에요.</div>
+    </div>
+    <div class="acs"><span class="on">주거래</span><span>적금</span><span>투자</span></div>
+    <div class="pb">
+      <div class="ttl"><span>신한 주거래 통장</span><span><span class="num">11월 10일</span>까지</span></div>
+      <div class="pr h"><span>날짜</span><span>내용</span><span>찾으신 금액</span><span>맡기신 금액</span><span>잔액</span></div>
+      <div class="pr"><span class="num" style="text-align:left">11.03</span><span class="ds">관리비</span><span class="num">182,000</span><span></span><span class="num">1,336,967</span></div>
+      <div class="pr x"><span class="num" style="text-align:left">11.05</span><span class="ds">적금<span class="it">이체</span></span><span class="num">500,000</span><span></span><span class="num">836,967</span></div>
+      <div class="pr"><span class="num" style="text-align:left">11.09</span><span class="ds">카드대금</span><span class="num">802,400</span><span></span><span class="num">34,567</span></div>
+      <div class="pr"><span class="num" style="text-align:left">11.10</span><span class="ds">급여</span><span></span><span class="num">3,200,000</span><span class="num" style="font-weight:700">3,234,567</span></div>
+    </div>
+    <div class="stale">11월에 <span class="num">3,200,000</span>원 들어오고 <span class="num">984,400</span>원 나갔어요. 적금으로 옮긴 <span class="num">500,000</span>원은 뺐어요.</div>
+    <div class="stale"><b>투자계좌 금액은 18일 전에 입력했어요.</b> <u>지금 금액 입력하기</u></div>
+    <div class="upl"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>거래내역 엑셀 올리기</div>
+    <div class="tabs">
+      <div><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>할 일</div>
+      <div><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>메모</div>
+      <div class="on"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg><span class="hl">자산</span></div>
+    </div>
+    <div class="fab"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+  </div>
+  <div class="cap"><h3>자산: 통장을 펼친 모양</h3><ul><li>계좌를 고르면 통장 한 면처럼 찾으신 금액 · 맡기신 금액 · 잔액</li><li>총액과 이번 달 흐름은 숫자 카드 대신 한 문장으로</li><li>내 계좌 간 이체는 흐리게 + "이체" 표시</li></ul></div>
+</div>
+
+</div>
+
+<!-- ================= MAC ================= -->
+<div class="mac">
+  <div class="bar"><i style="background:#FF5F57"></i><i style="background:#FEBC2E"></i><i style="background:#28C840"></i></div>
+  <div class="tp">
+    <div class="ham" aria-label="메뉴 열기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></div>
+    <div class="seg"><span class="on hl">오늘</span><span>달력</span><span>목록</span></div>
+    <div class="new">새로 만들기 <kbd>⌘N</kbd></div>
+  </div>
+  <div class="bd">
+    <div class="leaf">
+      <div class="ym"><span><span class="num" style="color:var(--pencil)">2026</span>&nbsp; 11월</span><span class="wd">토요일</span></div>
+      <div class="date">14</div>
+      <div class="sum">일정 <b>2</b>개<br>할 일 <b>4</b>개 중 <b>1</b>개 끝냄<br><span style="color:var(--sun)">늦은 할 일 1개</span></div>
+    </div>
+    <div class="col">
+      <div class="sec" style="padding:0 10px 6px">일정</div>
+      <div class="tl">
+        <span class="h num" style="top:-7px">09:00</span><span class="l" style="top:0"></span>
+        <span class="h num" style="top:61px">12:00</span><span class="l" style="top:68px"></span>
+        <span class="h num" style="top:129px">15:00</span><span class="l" style="top:136px"></span>
+        <span class="h num" style="top:197px">18:00</span><span class="l" style="top:204px"></span>
+        <span class="h num" style="top:265px">21:00</span><span class="l" style="top:272px"></span>
+        <span class="now" style="top:16px"></span>
+        <div class="e" style="top:70px;height:44px">브런치 <small>연남동, 개인</small></div>
+        <div class="e" style="top:226px;height:46px">저녁 약속 <small>성수동, 개인</small></div>
+      </div>
+    </div>
+    <div class="col" style="border-left:1px solid var(--rule)">
+      <div class="sec" style="padding:0 10px 6px">할 일</div>
+      <div class="td" style="padding:8px 10px"><span class="cb" style="border-color:var(--sun)"></span><span>보고서 제출 <span class="tag tag-w" style="margin-left:4px">회사</span></span><span class="late">어제까지</span></div>
+      <div class="td" style="padding:8px 10px"><span class="cb"></span><span>PR 리뷰 <span class="tag tag-w" style="margin-left:4px">회사</span></span><span class="meta num">16일 18:00</span></div>
+      <div class="td" style="padding:8px 10px"><span class="cb"></span><span>운동 <span class="tag tag-p" style="margin-left:4px">개인</span></span><span class="meta">매주 토</span></div>
+      <div class="td" style="padding:8px 10px"><span class="cb"></span><span>신한 거래내역 올리기</span><span class="meta">내일</span></div>
+      <div class="td" style="padding:8px 10px;color:var(--pencil)"><span style="font-size:16px;line-height:1">+</span><span>할 일 추가</span><span></span></div>
+    </div>
+  </div>
+</div>
+<div class="cap" style="max-width:1000px;margin:0 auto"><ul><li>맥에서는 메뉴가 서랍 안에 숨어 있고(☰ 또는 ⌘\), 왼쪽엔 일력 한 장이 크게 놓여요</li><li>가운데는 시간 막대(빨간 선이 지금), 오른쪽은 할 일</li></ul></div>
+
+<div class="foot">
+  <b>가장 눈에 띄는 것은 하나만:</b> 일력의 큰 날짜 숫자예요. 나머지는 조용하게 두었어요. 다크 모드에서는 바탕이 블루블랙 잉크, 글자가 종이색이 되고, 빨강 · 파랑 · 형광펜은 같은 역할을 유지해요.
+</div>
+
+</div>
+
+</body></html>

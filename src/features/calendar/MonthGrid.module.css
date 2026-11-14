@@ -1,0 +1,132 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding: 6px 10px 0;
+  text-align: center;
+}
+
+.weekday {
+  padding: 4px 0;
+  font-size: 11.5px;
+  color: var(--pencil);
+}
+
+.days {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  height: 46px;
+  padding: 3px 0 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.day:hover .n {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.day:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: -2px;
+}
+
+.n {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.sun {
+  color: var(--sun);
+}
+
+.sat {
+  color: var(--sat);
+}
+
+.outside {
+  opacity: 0.32;
+}
+
+/* Today: circled with the highlighter, slightly uneven like a hand-drawn ring. */
+.today .n,
+.today:hover .n {
+  background: var(--marker);
+  border-radius: 48% 52% 46% 54%;
+  font-weight: 700;
+}
+
+.selected .n {
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+
+.marks {
+  display: flex;
+  gap: 2px;
+  height: 5px;
+}
+
+.marks i {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.marks .work {
+  background: var(--ink);
+}
+
+.marks .personal {
+  box-shadow: inset 0 0 0 1.2px var(--ink);
+}
+
+.marks .todo {
+  background: var(--sun);
+  border-radius: 1px;
+}
+
+@media (min-width: 900px) {
+  .grid {
+    padding: 8px 0 0;
+  }
+
+  .day {
+    height: 64px;
+    padding-top: 6px;
+    gap: 5px;
+  }
+
+  .n {
+    width: 32px;
+    height: 32px;
+    font-size: 15.5px;
+  }
+
+  .marks {
+    height: 6px;
+    gap: 3px;
+  }
+
+  .marks i {
+    width: 6px;
+    height: 6px;
+  }
+}

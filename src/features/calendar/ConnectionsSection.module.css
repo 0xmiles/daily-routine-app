@@ -1,0 +1,240 @@
+.section {
+  display: grid;
+  gap: 14px;
+}
+
+.heading {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.loading {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.group {
+  display: grid;
+  gap: 6px;
+  padding: 16px 0 18px;
+  border-top: 1px solid var(--rule);
+}
+
+.groupHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.summary {
+  margin: 0;
+  color: var(--pencil);
+  font-size: 13.5px;
+}
+
+/* Status: filled dot = on, outline dot = off, red = needs attention. */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.on {
+  color: var(--ink);
+}
+
+.on .dot {
+  background: var(--ink);
+}
+
+.off {
+  color: var(--pencil);
+}
+
+.off .dot {
+  box-shadow: inset 0 0 0 1.3px var(--pencil);
+}
+
+.alert {
+  color: var(--sun);
+}
+
+.alert .dot {
+  background: var(--sun);
+}
+
+.account {
+  margin: 2px 0 0;
+  font-size: 14.5px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.detail {
+  margin: 2px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  margin: 0;
+  color: var(--pencil);
+  font-size: 14px;
+}
+
+.alertText {
+  margin: 4px 0 0;
+  color: var(--sun);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.hint {
+  margin: 4px 0 0;
+  color: var(--pencil);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.navForm {
+  display: contents;
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 6px 10px 12px;
+  border-radius: 8px;
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.noticeAttention {
+  box-shadow: inset 3px 0 0 var(--sun), inset 0 0 0 1px var(--rule);
+}
+
+.noticeText {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.noticeClose {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-top: -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pencil);
+  cursor: pointer;
+}
+
+.noticeClose:hover {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink);
+}
+
+.noticeClose:focus-visible,
+.calendarOption:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: 2px;
+}
+
+/* Sheet */
+.sheetIntro {
+  margin: 0 0 14px;
+  color: var(--pencil);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.sheetBlock {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.calendarList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendarList li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.calendarOption {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.calendarOption:not(:disabled):hover {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.calendarOption:disabled {
+  cursor: progress;
+}
+
+.calendarName {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.calendarId {
+  color: var(--pencil);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+
+.calendarNote {
+  color: var(--pencil);
+  font-size: 12.5px;
+}

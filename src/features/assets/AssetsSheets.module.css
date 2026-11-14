@@ -1,0 +1,151 @@
+/* Forms inside the 계좌 고르기 / 금액 입력 sheets. */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 20px 20px;
+}
+
+.lead {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.hint {
+  margin: 0;
+  color: var(--pencil);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lead + .hint {
+  margin-top: -10px;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.choice input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--ink);
+}
+
+.choice input:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: 2px;
+}
+
+.choiceText {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+
+.choiceMeta {
+  color: var(--pencil);
+  font-size: 12.5px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1.2px var(--rule);
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: 1px;
+}
+
+.input[aria-invalid="true"] {
+  box-shadow: inset 0 0 0 1.4px var(--sun);
+}
+
+.amountRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.amountInput {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.unit {
+  flex: none;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.error {
+  margin: 0;
+  color: var(--sun);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.submit {
+  width: 100%;
+  min-height: 44px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 900px) {
+  .form {
+    padding: 4px 24px 24px;
+  }
+}

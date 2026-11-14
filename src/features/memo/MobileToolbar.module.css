@@ -1,0 +1,65 @@
+/* Sits right above the on-screen keyboard (--kb-inset comes from visualViewport). */
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--kb-inset, 0px);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 48px;
+  padding: 0 8px;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+}
+
+.bar[data-keyboard="false"] {
+  height: calc(48px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.tool {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tool:active {
+  background: var(--rule);
+}
+
+.bold {
+  font-weight: 800;
+  font-size: 17px;
+}
+
+.done {
+  flex: none;
+  height: 36px;
+  margin-left: 4px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (min-width: 900px) {
+  .bar {
+    display: none;
+  }
+}

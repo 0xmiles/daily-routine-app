@@ -1,0 +1,84 @@
+.section {
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0 4px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.heading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.count {
+  color: var(--pencil);
+  font-size: 12.5px;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note {
+  margin: 0;
+  padding: 12px 0 4px;
+  color: var(--pencil);
+  font-size: 13.5px;
+}
+
+.problem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.inlineError {
+  margin: 0;
+  padding: 8px 0 0;
+  color: var(--sun);
+  font-size: 13px;
+}
+
+/* "+ 할 일 추가": same rhythm as a row, pencil-quiet. */
+.add {
+  display: grid;
+  grid-template-columns: 18px auto;
+  column-gap: 12px;
+  align-items: center;
+  justify-items: start;
+  width: 100%;
+  min-height: 46px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--pencil);
+  font-size: 14.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.add svg {
+  justify-self: center;
+}
+
+.add:hover {
+  color: var(--ink);
+}
+
+.add:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: 2px;
+}

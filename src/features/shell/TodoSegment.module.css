@@ -1,0 +1,43 @@
+.segment {
+  display: flex;
+  gap: 18px;
+  font-size: 14px;
+}
+
+.page {
+  padding: 10px 20px 4px;
+}
+
+.bar {
+  padding: 0;
+  margin-left: 6px;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--pencil);
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.item:hover {
+  color: var(--ink);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: 2px;
+}
+
+.on {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .page {
+    display: none;
+  }
+}

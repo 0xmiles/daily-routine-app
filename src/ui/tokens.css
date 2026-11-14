@@ -1,0 +1,66 @@
+/*
+ * Design tokens — spec §5.7 "일력 & 통장".
+ * Components use these variables only; never write hex colors elsewhere.
+ * (The one exception is src/ui/theme.ts, which mirrors --paper/--ink for
+ * <meta name="theme-color"> and the web manifest, where CSS vars can't be used.)
+ *
+ * Fonts come from next/font in src/app/layout.tsx:
+ *   --font-num  Archivo (variable width; use font-stretch / font-variation-settings 'wdth')
+ *   --font-body IBM Plex Sans KR 400/500/600/700
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --paper: #f7f7f4; /* 종이: 바탕 */
+  --sheet: #ffffff; /* 흰 종이: 떠 있는 면(일정 이름표 등) */
+  --ink: #1f2533; /* 블루블랙 잉크: 글자, 회사 태그(채움), 주요 버튼 */
+  --pencil: #6e737d; /* 연필: 보조 글자, 꺼진 아이콘 */
+  --rule: #e3e3de; /* 줄: 구분선 */
+  --sun: #d7263d; /* 일요일 빨강: 일요일·공휴일, 늦음, 오래된 잔액, 지금 시각 선 */
+  --sat: #2d5bd7; /* 토요일 파랑: 토요일, 링크 */
+  --marker: #ffe76a; /* 형광펜: 오늘, 지금 쓰는 줄, 선택된 탭 (밑칠로만) */
+  --passbook: #e8f0ea; /* 통장 연두: 자산 화면의 통장 면 */
+
+  /* Derived (not palette colors): overlays and floating surfaces. */
+  --scrim: rgb(31 37 51 / 0.4);
+  --shadow-float: 0 6px 16px rgb(31 37 51 / 0.25);
+
+  --font-stack-num: var(--font-num), "Helvetica Neue", Arial, sans-serif;
+  --font-stack-body: var(--font-body), -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+}
+
+/* Dark: paper ↔ ink swap; sun / sat / marker keep their roles with adjusted lightness. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --paper: #1f2533;
+    --sheet: #283041;
+    --ink: #f7f7f4;
+    --pencil: #a3a8b2;
+    --rule: #384052;
+    --sun: #ff5c6c;
+    --sat: #7a9bff;
+    --marker: #7a6a12;
+    --passbook: #24302a;
+
+    --scrim: rgb(0 0 0 / 0.55);
+    --shadow-float: 0 6px 16px rgb(0 0 0 / 0.5);
+  }
+}
+
+/* Numbers: dates, times, money. Archivo with aligned digits. */
+.num {
+  font-family: var(--font-stack-num);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0;
+}
+
+/* Highlighter underlay for "now / today / selected" (never as a button fill). */
+.hl {
+  background: linear-gradient(transparent 52%, var(--marker) 52%, var(--marker) 94%, transparent 94%);
+  padding: 0 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}

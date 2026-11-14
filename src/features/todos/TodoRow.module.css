@@ -1,0 +1,66 @@
+/* A todo line: [checkbox] [title + tag] [due text]. Rows are separated by thin rules. */
+.row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: center;
+  min-height: 46px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14.5px;
+  line-height: 1.4;
+}
+
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 7px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.title:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: 2px;
+}
+
+.titleText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.tag {
+  font-size: 10.5px;
+}
+
+.meta {
+  justify-self: end;
+  color: var(--pencil);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+.late {
+  color: var(--sun);
+  font-weight: 600;
+}
+
+.done .titleText {
+  color: var(--pencil);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.done .meta {
+  opacity: 0.8;
+}

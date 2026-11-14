@@ -1,0 +1,141 @@
+/* The one loud thing on the screen is the big date (spec §5.7 rule 1). */
+
+.leaf {
+  padding: 4px 20px 12px;
+}
+
+.ym {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.5px;
+}
+
+.year {
+  color: var(--pencil);
+}
+
+.right {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.weekday {
+  font-weight: 600;
+}
+
+.holiday {
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.numeral {
+  margin: 10px 0 8px -3px;
+  font-family: var(--font-stack-num);
+  font-size: 122px;
+  font-weight: 800;
+  font-stretch: 62%;
+  font-variation-settings: "wdth" 62;
+  font-variant-numeric: lining-nums;
+  line-height: 0.78;
+  letter-spacing: -0.02em;
+}
+
+.ink {
+  color: var(--ink);
+}
+
+.sat {
+  color: var(--sat);
+}
+
+.sun {
+  color: var(--sun);
+}
+
+.sum {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--pencil);
+}
+
+.sum b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.loading {
+  visibility: hidden;
+}
+
+.late {
+  display: none;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--sun);
+}
+
+/* Page turn after a swipe or arrow key. */
+.enterNext {
+  animation: leaf-next 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.enterPrev {
+  animation: leaf-prev 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes leaf-next {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes leaf-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+@media (min-width: 900px) {
+  .leaf {
+    padding: 20px 22px;
+  }
+
+  .ym {
+    font-size: 14px;
+  }
+
+  .numeral {
+    margin: 16px 0 16px -6px;
+    font-size: 210px;
+  }
+
+  .part {
+    display: block;
+  }
+
+  .comma {
+    display: none;
+  }
+
+  .late {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enterNext,
+  .enterPrev {
+    animation: none;
+  }
+}

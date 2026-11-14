@@ -1,0 +1,205 @@
+/* Memo pad. --memo-gutter is the side padding; editor lines bleed into it so the
+   current-line highlight runs edge to edge (mockup .cur). */
+.page {
+  --memo-gutter: 20px;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+}
+
+@media (min-width: 900px) {
+  .page {
+    --memo-gutter: 40px;
+    padding-top: 28px;
+  }
+}
+
+/* Room to scroll the last lines above the keyboard tool bar. */
+.page[data-toolbar] {
+  padding-bottom: 120px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px var(--memo-gutter) 4px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-stack-body);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+}
+
+.actions {
+  display: flex;
+  gap: 2px;
+  margin-right: -10px;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--rule);
+}
+
+.iconButton:disabled {
+  color: var(--pencil);
+  cursor: default;
+  background: transparent;
+}
+
+.search {
+  padding: 4px var(--memo-gutter) 6px;
+}
+
+.searchInput {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1.2px var(--rule);
+  font-size: 16px; /* 16px keeps iOS from zooming in */
+  color: var(--ink);
+}
+
+.searchInput::placeholder {
+  color: var(--pencil);
+}
+
+.searchInput:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: 0;
+}
+
+.searchResult {
+  min-height: 1.5em;
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--pencil);
+}
+
+.status,
+.loading {
+  margin: 4px var(--memo-gutter) 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pencil);
+}
+
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 4px var(--memo-gutter) 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.notice p {
+  flex: 1 1 240px;
+  margin: 0;
+}
+
+.noticeClose {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--sat);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 24px var(--memo-gutter);
+  font-size: 15px;
+}
+
+.error p {
+  margin: 0;
+}
+
+.errorLink {
+  color: var(--sat);
+  font-weight: 500;
+}
+
+.blocks {
+  display: flex;
+  flex-direction: column;
+}
+
+.block {
+  padding: 0 var(--memo-gutter);
+  scroll-margin: 96px 0 120px;
+}
+
+.block[hidden] {
+  display: none;
+}
+
+/* Block divider: creation time as a quiet line, then a rule (mockup .bsep). */
+.stamp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--pencil);
+}
+
+.stamp::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.blocks > .block:first-child .stamp {
+  margin-top: 6px;
+}
+
+.editor {
+  margin: 0 calc(-1 * var(--memo-gutter));
+  font-size: 16px; /* 16px keeps iOS from zooming in while typing */
+  color: var(--ink);
+}
+
+/* Past blocks look faded while another block is being written. */
+.block[data-dim] .editor {
+  color: var(--pencil);
+}
+
+@media (min-width: 900px) {
+  .editor {
+    font-size: 15.5px;
+  }
+}

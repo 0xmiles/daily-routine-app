@@ -1,0 +1,79 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.heading {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--pencil);
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.field {
+  display: flex;
+  flex: 1 1 140px;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pencil);
+}
+
+.control {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1.2px var(--rule);
+  font-size: 16px;
+}
+
+.control:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1.6px var(--ink);
+}
+
+.saved {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--pencil);
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sun);
+}
+
+.problem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 0;
+  border-top: 1px solid var(--rule);
+}

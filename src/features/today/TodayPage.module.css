@@ -1,0 +1,240 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  padding-top: 10px;
+  overflow-x: hidden;
+  touch-action: pan-y;
+}
+
+/* ---------- 일력 page ---------- */
+
+.leafCol {
+  position: relative;
+}
+
+.dayNav {
+  position: absolute;
+  right: 12px;
+  bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.navButton {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pencil);
+  cursor: pointer;
+}
+
+.navButton:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.backToday {
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sat);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.backToday:hover {
+  text-decoration: underline;
+}
+
+.navButton:focus-visible,
+.backToday:focus-visible,
+.addTodo:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: 2px;
+}
+
+/* Perforation where the page tears off, with punched notches at both edges. */
+.perf {
+  position: relative;
+  height: 0;
+  margin: 2px 12px 0;
+  border-top: 1.6px dashed color-mix(in srgb, var(--pencil) 45%, var(--rule));
+}
+
+.perf::before,
+.perf::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 12%, var(--paper));
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+.perf::before {
+  left: -18px;
+}
+
+.perf::after {
+  right: -18px;
+}
+
+/* ---------- sections ---------- */
+
+.secHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 20px 4px;
+}
+
+.heading {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.count {
+  font-size: 12px;
+  color: var(--pencil);
+}
+
+.list,
+.todoList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.note,
+.empty,
+.hintText {
+  margin: 0;
+  padding: 6px 20px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--pencil);
+}
+
+.empty {
+  color: var(--ink);
+}
+
+.hint {
+  padding: 8px 20px 2px;
+}
+
+.problem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding-bottom: 6px;
+}
+
+.problem > button {
+  margin-left: 20px;
+}
+
+.error {
+  margin: 0;
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--sun);
+}
+
+.todoCol {
+  padding: 4px 20px 24px;
+}
+
+.dayTodos .secHead,
+.dayTodos .note,
+.dayTodos .empty {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.addTodo {
+  min-height: 36px;
+  margin-top: 4px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--pencil);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.addTodo:hover {
+  color: var(--ink);
+}
+
+@media (max-width: 899.98px) {
+  .desktopOnly {
+    display: none;
+  }
+}
+
+/* ---------- Mac: leaf | time ruler | todos ---------- */
+
+@media (min-width: 900px) {
+  .page {
+    display: grid;
+    grid-template-columns: minmax(270px, 300px) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "leaf events todos";
+    min-height: calc(100dvh - 57px);
+    padding-top: 0;
+    touch-action: auto;
+  }
+
+  .leafCol {
+    grid-area: leaf;
+    border-right: 1.6px dashed color-mix(in srgb, var(--pencil) 45%, var(--rule));
+  }
+
+  .dayNav {
+    position: static;
+    padding: 0 16px 16px;
+  }
+
+  .perf {
+    display: none;
+  }
+
+  .eventsCol {
+    grid-area: events;
+    min-width: 0;
+    padding-top: 16px;
+  }
+
+  .eventsCol .secHead {
+    padding: 0 20px 6px;
+  }
+
+  .todoCol {
+    grid-area: todos;
+    min-width: 0;
+    padding: 16px 20px 24px;
+    border-left: 1px solid var(--rule);
+  }
+
+  .todoCol .dayTodos .secHead {
+    padding-top: 0;
+  }
+
+  .mobileOnly {
+    display: none;
+  }
+}

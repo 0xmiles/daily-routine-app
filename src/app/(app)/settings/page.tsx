@@ -1,0 +1,41 @@
+import type { Metadata } from "next";
+import { ConnectionsSection } from "@/features/calendar/ConnectionsSection";
+import { PushToggle } from "@/features/notify/PushToggle";
+import { ReminderSettings } from "@/features/notify/ReminderSettings";
+import { LogoutButton } from "@/features/shell/LogoutButton";
+import styles from "./settings.module.css";
+
+export const metadata: Metadata = { title: "설정" };
+
+/** 설정: 캘린더 연결 (개인 먼저, Track A) → 알림 → 계정. */
+export default function SettingsPage() {
+  return (
+    <div className={styles.page}>
+      <h1 className={styles.title}>설정</h1>
+
+      <ConnectionsSection />
+
+      <section className={styles.section} aria-labelledby="settings-notify">
+        <h2 id="settings-notify" className={styles.heading}>
+          알림
+        </h2>
+        <div className={styles.group}>
+          <PushToggle />
+        </div>
+        <ReminderSettings />
+      </section>
+
+      <section className={styles.section} aria-labelledby="settings-account">
+        <h2 id="settings-account" className={styles.heading}>
+          계정
+        </h2>
+        <div className={styles.group}>
+          <p className={styles.desc}>로그아웃해도 연결한 캘린더와 적어 둔 내용은 그대로 남아요.</p>
+          <div>
+            <LogoutButton />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
