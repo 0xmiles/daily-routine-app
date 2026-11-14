@@ -63,3 +63,37 @@ export function CloseIcon({ size = 18 }: { size?: number }) {
     </svg>
   );
 }
+
+export function PlusIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={2.2} {...base}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+export function BackIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={2.2} {...base}>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ size = 19 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={1.9} {...base}>
+      <path d="M4 7h16M10 11v6M14 11v6" />
+      <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+    </svg>
+  );
+}
+
+export function FileIcon({ size = 40 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={1.4} {...base}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5M9 13h6M9 17h4" />
+    </svg>
+  );
+}

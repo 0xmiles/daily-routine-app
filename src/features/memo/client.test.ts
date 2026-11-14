@@ -68,14 +68,14 @@ describe("memo client", () => {
     expect(await fetchEventKeys()).toEqual(["primary:evt-9"]);
   });
 
-  it("openEventMemo creates (or finds) the event block, then navigates to /memo?block=<id>", async () => {
+  it("openEventMemo creates (or finds) the event block, then navigates to /memo?id=<id>", async () => {
     respond({ ...block, eventRef: ref }, 201);
     const navigate = vi.fn();
     const result = await openEventMemo(ref, navigate);
     expect(result.id).toBe(block.id);
     expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({ eventRef: ref });
-    expect(navigate).toHaveBeenCalledWith(`/memo?block=${block.id}`);
-    expect(memoBlockHref(block.id)).toBe(`/memo?block=${block.id}`);
+    expect(navigate).toHaveBeenCalledWith(`/memo?id=${block.id}`);
+    expect(memoBlockHref(block.id)).toBe(`/memo?id=${block.id}`);
   });
 
   it("openEventMemo defaults to window.location.assign", async () => {
@@ -83,6 +83,6 @@ describe("memo client", () => {
     const assign = vi.fn();
     vi.stubGlobal("window", { location: { assign } });
     await openEventMemo(ref);
-    expect(assign).toHaveBeenCalledWith(`/memo?block=${block.id}`);
+    expect(assign).toHaveBeenCalledWith(`/memo?id=${block.id}`);
   });
 });

@@ -21,7 +21,7 @@ const plexSansKr = IBM_Plex_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "일력",
+  title: { default: "데일리", template: "%s · 데일리" },
   description: "회사와 개인 일정, 할 일, 메모, 자산을 한곳에서 보는 하루 관리 앱이에요.",
 };
 

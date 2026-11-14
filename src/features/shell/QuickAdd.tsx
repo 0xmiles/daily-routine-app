@@ -12,7 +12,7 @@ import { usePersonalConnected } from "./personalConnection";
 import { nextFullHourSlot } from "./slots";
 import styles from "./QuickAdd.module.css";
 
-export type QuickAddKind = "todo" | "event";
+export type QuickAddKind = "todo" | "event" | "memo";
 
 export interface QuickAddProps {
   open: boolean;
@@ -20,15 +20,20 @@ export interface QuickAddProps {
   /** Saved: the shell closes the sheet and shows `message` briefly. */
   onSaved: (message: string) => void;
   /** "자세히": open the full editor for `kind`, carrying the typed title. */
-  onMore: (kind: QuickAddKind, title: string) => void;
+  onMore: (kind: Exclude<QuickAddKind, "memo">, title: string) => void;
+  /** 메모: go to `href` (the memo page opens a new memo with the typed first line). */
+  onMemoCreated: (href: string) => void;
   defaultKind?: QuickAddKind;
 }
 
-/** ⌘N / + : pick 할 일 or 일정, type a title, Enter saves. Everything else is optional. */
-export function QuickAdd({ open, onClose, onSaved, onMore, defaultKind = "todo" }: QuickAddProps) {
+/**
+ * ⌘N / + : pick 할 일, 일정 or 메모, type a title, Enter saves (or, for a memo,
+ * opens it with that first line). Everything else is optional.
+ */
+export function QuickAdd({ open, onClose, onSaved, onMore, onMemoCreated, defaultKind = "todo" }: QuickAddProps) {
   return (
     <Sheet open={open} onClose={onClose} title="빠른 추가">
-      <QuickAddForm onSaved={onSaved} onMore={onMore} defaultKind={defaultKind} />
+      <QuickAddForm onSaved={onSaved} onMore={onMore} onMemoCreated={onMemoCreated} defaultKind={defaultKind} />
     </Sheet>
   );
 }
@@ -36,7 +41,20 @@ export function QuickAdd({ open, onClose, onSaved, onMore, defaultKind = "todo" 
 const KINDS: Array<{ kind: QuickAddKind; label: string }> = [
   { kind: "todo", label: "할 일" },
   { kind: "event", label: "일정" },
+  { kind: "memo", label: "메모" },
 ];
+
+const PLACEHOLDER: Record<QuickAddKind, string> = {
+  todo: "할 일을 적어 주세요",
+  event: "일정 이름을 적어 주세요",
+  memo: "메모 이름을 적어 주세요",
+};
+
+const SUBMIT: Record<QuickAddKind, string> = {
+  todo: "할 일 추가하기",
+  event: "일정 추가하기",
+  memo: "메모 쓰기",
+};
 
 function slotSentence(now: Date): string {
   const slot = nextFullHourSlot(now);
@@ -44,7 +62,7 @@ function slotSentence(now: Date): string {
   return `${day} ${slot.startTime}부터 1시간으로 잡아요.`;
 }
 
-function QuickAddForm({ onSaved, onMore, defaultKind }: Omit<QuickAddProps, "open" | "onClose">) {
+function QuickAddForm({ onSaved, onMore, onMemoCreated, defaultKind }: Omit<QuickAddProps, "open" | "onClose">) {
   const [kind, setKind] = useState<QuickAddKind>(defaultKind ?? "todo");
   const [title, setTitle] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +87,10 @@ function QuickAddForm({ onSaved, onMore, defaultKind }: Omit<QuickAddProps, "ope
   async function submit(e?: FormEvent) {
     e?.preventDefault();
     const trimmed = title.trim();
+    if (kind === "memo") {
+      onMemoCreated(`/memo?new=${encodeURIComponent(trimmed)}`);
+      return;
+    }
     if (!trimmed || saving || blocked) return;
     setSaving(true);
     setError(null);
@@ -131,13 +153,17 @@ function QuickAddForm({ onSaved, onMore, defaultKind }: Omit<QuickAddProps, "ope
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={onTitleKey}
-            placeholder={kind === "todo" ? "할 일을 적어 주세요" : "일정 이름을 적어 주세요"}
+            placeholder={PLACEHOLDER[kind]}
             enterKeyHint="done"
             autoComplete="off"
             autoFocus
           />
           <p className={styles.sub}>
-            {kind === "todo" ? "제목만 적어도 저장돼요. 마감과 반복은 자세히에서 정해요." : slotSentence(new Date())}
+            {kind === "todo"
+              ? "제목만 적어도 저장돼요. 마감과 반복은 자세히에서 정해요."
+              : kind === "event"
+                ? slotSentence(new Date())
+                : "적은 글이 메모의 첫 줄(이름)이 돼요. 비워 두고 열어도 돼요."}
           </p>
           {error && (
             <p role="alert" className={styles.error}>
@@ -145,11 +171,13 @@ function QuickAddForm({ onSaved, onMore, defaultKind }: Omit<QuickAddProps, "ope
             </p>
           )}
           <div className={styles.actions}>
-            <Button variant="ghost" onClick={() => onMore(kind, title.trim())}>
-              자세히
-            </Button>
-            <Button type="submit" disabled={saving || !title.trim()}>
-              {kind === "todo" ? "할 일 추가하기" : "일정 추가하기"}
+            {kind !== "memo" && (
+              <Button variant="ghost" onClick={() => onMore(kind, title.trim())}>
+                자세히
+              </Button>
+            )}
+            <Button type="submit" disabled={saving || (kind !== "memo" && !title.trim())}>
+              {SUBMIT[kind]}
             </Button>
           </div>
         </form>

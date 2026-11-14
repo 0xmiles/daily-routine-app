@@ -91,14 +91,17 @@ export async function fetchEventKeys(): Promise<string[]> {
   return ((await res.json()) as { keys: string[] }).keys;
 }
 
-/** `/memo?block=<id>` — the memo page scrolls to and focuses that block. */
-export function memoBlockHref(blockId: string): string {
-  return `/memo?block=${encodeURIComponent(blockId)}`;
+/** `/memo?id=<id>` — the memo page opens that memo file. */
+export function memoHref(id: string): string {
+  return `/memo?id=${encodeURIComponent(id)}`;
 }
 
+/** @deprecated Same as memoHref (memos are files now; old `?block=` links still open). */
+export const memoBlockHref = memoHref;
+
 /**
- * "메모 쓰기" / "메모 보기" from an event: creates the event's block (or gets the
- * existing one — one block per eventKey) and then navigates to `/memo?block=<id>`.
+ * "메모 쓰기" / "메모 보기" from an event: creates the event's memo file (or gets
+ * the existing one — one memo per eventKey) and then navigates to `/memo?id=<id>`.
  *
  * Navigation defaults to `window.location.assign` (a full page load, works from
  * anywhere). Inside the app pass the App Router instead for a soft navigation:
@@ -110,6 +113,6 @@ export async function openEventMemo(
   navigate: (href: string) => void = (href) => window.location.assign(href),
 ): Promise<MemoBlock> {
   const block = await createBlock({ eventRef: ref });
-  navigate(memoBlockHref(block.id));
+  navigate(memoHref(block.id));
   return block;
 }

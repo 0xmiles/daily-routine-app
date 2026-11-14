@@ -43,9 +43,30 @@ textarea {
   color: inherit;
 }
 
+a,
+button,
+[role="button"],
+[role="tab"],
+[role="radio"],
+label {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button:not(:disabled),
+[role="button"],
+[role="radio"],
+summary {
+  cursor: pointer;
+}
+
 :focus-visible {
   outline: 2px solid var(--sat);
   outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--sat) 22%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

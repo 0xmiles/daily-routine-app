@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { MemoPage } from "@/features/memo/MemoPage";
 
 export const metadata: Metadata = { title: "메모" };
 
-/** /memo[?block=<id>] — the memo pad; `block` scrolls to and focuses that block. */
+/**
+ * /memo — the memo files. `?id=<id>` opens one (old `?block=<id>` links too);
+ * `?new=<title>` starts a new memo (빠른 추가 from another screen).
+ */
 export default async function Page({ searchParams }: PageProps<"/memo">) {
-  const { block } = await searchParams;
-  return <MemoPage focusBlockId={typeof block === "string" && block ? block : null} />;
+  const { id, block } = await searchParams;
+  const pick = (v: string | string[] | undefined) => (typeof v === "string" && v ? v : null);
+  return (
+    <Suspense>
+      <MemoPage initialId={pick(id) ?? pick(block)} />
+    </Suspense>
+  );
 }

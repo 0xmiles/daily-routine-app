@@ -1,136 +1,273 @@
-/* Memo pad. --memo-gutter is the side padding; editor lines bleed into it so the
-   current-line highlight runs edge to edge (mockup .cur). */
+/*
+ * Memo files. Phone: one pane at a time (data-view="list" | "file").
+ * 900px and wider: list on the left, the open file on the right; each pane
+ * scrolls on its own under the shell's top bar.
+ *
+ * --memo-gutter is the file's side padding; editor lines bleed into it so the
+ * current-line highlight runs edge to edge.
+ */
 .page {
-  --memo-gutter: 20px;
-  width: 100%;
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 8px 0 40px;
+  --memo-gutter: var(--gutter);
+  position: relative;
 }
 
-@media (min-width: 900px) {
-  .page {
-    --memo-gutter: 40px;
-    padding-top: 28px;
-  }
+/* ---------- list ---------- */
+
+.listPane {
+  padding-bottom: 24px;
 }
 
-/* Room to scroll the last lines above the keyboard tool bar. */
-.page[data-toolbar] {
-  padding-bottom: 120px;
-}
-
-.header {
+.listHead {
+  position: sticky;
+  top: calc(var(--bar-h) + env(safe-area-inset-top));
+  z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 6px;
+  padding: 10px var(--gutter);
+  background: var(--paper);
+}
+
+.searchBox {
+  display: flex;
+  flex: 1;
+  align-items: center;
   gap: 8px;
-  padding: 2px var(--memo-gutter) 4px;
-}
-
-.title {
-  margin: 0;
-  font-family: var(--font-stack-body);
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: -0.03em;
-}
-
-.actions {
-  display: flex;
-  gap: 2px;
-  margin-right: -10px;
-}
-
-.iconButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.iconButton:hover {
-  background: var(--rule);
-}
-
-.iconButton:disabled {
+  min-width: 0;
+  height: var(--tap);
+  padding: 0 4px 0 12px;
+  border-radius: var(--radius-md);
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1px var(--rule);
   color: var(--pencil);
-  cursor: default;
-  background: transparent;
+  transition: box-shadow var(--dur-fast) ease-out;
 }
 
-.search {
-  padding: 4px var(--memo-gutter) 6px;
+.searchBox:focus-within {
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+  color: var(--ink);
 }
 
 .searchInput {
-  width: 100%;
-  height: 42px;
-  padding: 0 12px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
   border: 0;
-  border-radius: 8px;
-  background: var(--sheet);
-  box-shadow: inset 0 0 0 1.2px var(--rule);
-  font-size: 16px; /* 16px keeps iOS from zooming in */
+  background: transparent;
+  font-size: 16px; /* keeps iOS from zooming in */
   color: var(--ink);
+  outline: none;
 }
 
 .searchInput::placeholder {
   color: var(--pencil);
 }
 
-.searchInput:focus-visible {
-  outline: 2px solid var(--sat);
-  outline-offset: 0;
+.searchInput::-webkit-search-cancel-button {
+  display: none;
 }
 
-.searchResult {
-  min-height: 1.5em;
-  margin: 6px 0 0;
-  font-size: 13px;
+.clear {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
   color: var(--pencil);
 }
 
-.status,
-.loading {
-  margin: 4px var(--memo-gutter) 8px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--pencil);
-}
-
-.notice {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 12px;
-  margin: 4px var(--memo-gutter) 8px;
-  font-size: 13px;
-  line-height: 1.5;
+.clear:hover {
+  background: var(--hover);
   color: var(--ink);
 }
 
-.notice p {
-  flex: 1 1 240px;
-  margin: 0;
+.searchResult {
+  margin: 0 var(--gutter) 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pencil);
 }
 
-.noticeClose {
-  padding: 4px 0;
+.iconButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: var(--tap);
+  height: var(--tap);
+  padding: 0;
   border: 0;
+  border-radius: var(--radius-md);
   background: transparent;
-  color: var(--sat);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
+  color: var(--ink);
+  transition: background-color var(--dur-fast) ease-out;
+}
+
+.iconButton:hover {
+  background: var(--hover);
+}
+
+.iconButton:active {
+  background: var(--press);
+}
+
+.iconButton:disabled {
+  color: var(--pencil);
+  background: transparent;
+  cursor: default;
+}
+
+/* Phones have the floating + button for this. */
+.newInList {
+  display: none;
+}
+
+.files {
+  margin: 0;
+  padding: 0 calc(var(--gutter) - 10px);
+  list-style: none;
+}
+
+.file {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 64px;
+  padding: 11px 10px 12px;
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color var(--dur-fast) ease-out;
+}
+
+/* Hairline between rows, inset like a notebook ruling. */
+.files li + li .file::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: var(--rule);
+}
+
+.file:hover {
+  background: var(--hover);
+}
+
+.file:active {
+  background: var(--press);
+}
+
+.file:focus-visible {
+  outline: 2px solid var(--sat);
+  outline-offset: -2px;
+}
+
+.file[aria-current="page"] {
+  background: var(--selected);
+}
+
+.file[aria-current="page"]::before,
+.files li:has(+ li .file[aria-current="page"]) + li .file::before,
+.file:hover::before,
+.files li:has(.file:hover) + li .file::before {
+  opacity: 0;
+}
+
+.fileTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fileIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.fileName {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileMeta {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--pencil);
+}
+
+.fileTime {
+  flex: none;
+  color: var(--ink);
+  opacity: 0.72;
+}
+
+.filePreview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileStatus {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sun);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 56px var(--gutter) 0;
+  text-align: center;
+  color: var(--pencil);
+}
+
+.empty > svg {
+  margin-bottom: 6px;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.emptyText {
+  max-width: 30ch;
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--pencil);
+}
+
+.loading {
+  margin: 16px var(--gutter);
+  font-size: 14px;
+  color: var(--pencil);
 }
 
 .error {
@@ -138,7 +275,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 12px;
-  margin: 24px var(--memo-gutter);
+  margin: 24px var(--gutter);
   font-size: 15px;
 }
 
@@ -151,55 +288,237 @@
   font-weight: 500;
 }
 
-.blocks {
-  display: flex;
-  flex-direction: column;
-}
+/* ---------- notices ---------- */
 
-.block {
-  padding: 0 var(--memo-gutter);
-  scroll-margin: 96px 0 120px;
-}
-
-.block[hidden] {
+.listNotices:empty,
+.paneNotices:empty {
   display: none;
 }
 
-/* Block divider: creation time as a quiet line, then a rule (mockup .bsep). */
-.stamp {
+.listNotices {
+  margin: 0 var(--gutter) 8px;
+}
+
+.paneNotices {
+  margin: 8px var(--memo-gutter) 0;
+}
+
+.status,
+.notice {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--sheet);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.notice p {
+  margin: 0;
+}
+
+.noticeActions {
+  display: flex;
+  gap: 4px;
+  margin: 6px -8px -6px;
+}
+
+.noticeButton {
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sat);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.noticeButton:hover {
+  background: var(--hover);
+}
+
+/* ---------- file ---------- */
+
+.filePane {
+  min-width: 0;
+}
+
+.fileHead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 14px 0 4px;
-  font-size: 12px;
-  line-height: 1.4;
+  gap: 4px;
+  min-height: calc(var(--bar-h) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) calc(var(--memo-gutter) - 10px) 0 calc(var(--memo-gutter) - 14px);
+  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  backdrop-filter: saturate(1.4) blur(12px);
+}
+
+.back {
+  padding: 0 10px 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.fileStatusText {
+  margin-left: auto;
+  padding: 0 6px;
+  font-size: 12.5px;
   color: var(--pencil);
 }
 
-.stamp::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
+.doc {
+  padding: 16px var(--memo-gutter) 120px;
 }
 
-.blocks > .block:first-child .stamp {
-  margin-top: 6px;
+/* Room to scroll the last lines above the keyboard tool bar. */
+.doc[data-toolbar] {
+  padding-bottom: 160px;
+}
+
+.stamp {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  color: var(--pencil);
+}
+
+.label {
+  margin-bottom: 18px;
 }
 
 .editor {
   margin: 0 calc(-1 * var(--memo-gutter));
-  font-size: 16px; /* 16px keeps iOS from zooming in while typing */
+  font-size: 16.5px; /* ≥16px keeps iOS from zooming in while typing */
   color: var(--ink);
 }
 
-/* Past blocks look faded while another block is being written. */
-.block[data-dim] .editor {
-  color: var(--pencil);
+.paneEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 60%;
+  padding: 80px var(--gutter);
+  text-align: center;
 }
 
+/* ---------- delete confirmation ---------- */
+
+.confirm p {
+  margin: 0 0 18px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.danger {
+  background: var(--sun);
+  color: #fff;
+}
+
+/* ---------- phone: one pane at a time ---------- */
+
+@media (max-width: 899.98px) {
+  .page[data-view="list"] .filePane,
+  .page[data-view="file"] .listPane {
+    display: none;
+  }
+
+  .paneEmpty {
+    display: none;
+  }
+}
+
+/* ---------- 900px and wider: two panes ---------- */
+
 @media (min-width: 900px) {
+  .page {
+    --memo-gutter: 48px;
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    height: calc(100dvh - var(--bar-h));
+  }
+
+  .listPane {
+    overflow-y: auto;
+    border-right: 1px solid var(--rule);
+    padding-bottom: 32px;
+  }
+
+  .listHead {
+    top: 0;
+    padding: 12px 10px 10px 16px;
+  }
+
+  .files {
+    padding: 0 8px;
+  }
+
+  .searchResult,
+  .listNotices {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .newInList {
+    display: inline-flex;
+  }
+
+  .filePane {
+    overflow-y: auto;
+  }
+
+  .fileHead {
+    min-height: 52px;
+    padding: 0 16px;
+    border-bottom-color: transparent;
+    background: var(--paper);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .back {
+    display: none;
+  }
+
+  .doc,
+  .paneNotices {
+    width: 100%;
+    max-width: calc(720px + 2 * var(--memo-gutter));
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .paneNotices {
+    padding: 0 var(--memo-gutter);
+  }
+
+  .doc {
+    padding-top: 8px;
+  }
+
   .editor {
-    font-size: 15.5px;
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .file,
+  .iconButton,
+  .searchBox {
+    transition: none;
   }
 }

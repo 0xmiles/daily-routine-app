@@ -23,6 +23,8 @@ export interface BlockEditorProps {
   /** Accessible name of the text area. */
   label: string;
   placeholder?: string;
+  /** First line is the memo's title (read once, on mount). */
+  titled?: boolean;
   className?: string;
   onChange(key: string, content: string): void;
   onNewBlock(): void;
@@ -44,13 +46,14 @@ function minimalChange(from: string, to: string): ChangeSpec {
   return { from: start, to: from.length - end, insert: to.slice(start, to.length - end) };
 }
 
-/** One CodeMirror 6 editor for one memo block. */
+/** One CodeMirror 6 editor for one memo file. */
 export const BlockEditor = memo(function BlockEditor(props: BlockEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const latest = useRef(props);
   const initialContent = useRef(props.content);
   const initialPlaceholder = useRef(props.placeholder);
+  const initialTitled = useRef(props.titled ?? false);
   const appliedRev = useRef(props.remoteRev);
 
   useLayoutEffect(() => {
@@ -72,6 +75,7 @@ export const BlockEditor = memo(function BlockEditor(props: BlockEditorProps) {
             ]),
           ),
           memoExtensions({
+            titled: initialTitled.current,
             onNewBlock: () => p().onNewBlock(),
             onBoundary: (dir) => p().onBoundary(p().blockKey, dir),
           }),

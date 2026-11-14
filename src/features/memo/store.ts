@@ -4,7 +4,10 @@ import * as client from "./client";
 import { MemoApiError } from "./client";
 import { readDrafts, removeDraft, writeDraft } from "./draft";
 
-// Client-side state of the memo pad and its sync with the server.
+// Client-side state of the memo files and their sync with the server.
+//
+// Each memo is a file (the server still calls them "blocks"): its first line is
+// its title. The list is ordered by last edit, newest first.
 //
 // - Edits are kept in memory and in device storage (draft.ts) right away, and
 //   sent 800ms after typing stops.
@@ -25,13 +28,18 @@ export interface PadBlock {
   /** Server version `content` is based on (0 = not created yet). */
   version: number;
   createdAt: string;
+  /** Last edit (local edits move a file to the top of the list right away). */
+  updatedAt: string;
   eventRef: EventRef | null;
   status: BlockStatus;
   /** Bumped whenever `content` was replaced from the server; the editor reloads its text then. */
   remoteRev: number;
 }
 
-export type PadNotice = { kind: "conflict"; copyKey: string } | null;
+export type PadNotice =
+  | { kind: "conflict"; copyKey: string }
+  | { kind: "deleteConflict"; key: string }
+  | null;
 
 export interface PadState {
   phase: "loading" | "ready" | "error";
@@ -89,15 +97,16 @@ function fromServer(block: MemoBlock): PadBlock {
     content: block.content,
     version: block.version,
     createdAt: block.createdAt,
+    updatedAt: block.updatedAt,
     eventRef: block.eventRef,
     status: "saved",
     remoteRev: 0,
   };
 }
 
-/** Newest first (stable for equal timestamps). */
+/** Most recently edited first (stable for equal timestamps). */
 function sortBlocks(blocks: PadBlock[]): PadBlock[] {
-  return [...blocks].sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+  return [...blocks].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
 }
 
 interface Meta {
@@ -230,7 +239,6 @@ export class MemoPad {
 
     let blocks = this.merge(server);
     if (first) blocks = this.restoreDrafts(blocks);
-    if (blocks.length === 0) blocks = [this.newLocal("", "saved")];
     this.set({ phase: "ready", loadError: null, blocks: sortBlocks(blocks) });
     if (first) this.flushAll();
   }
@@ -254,6 +262,7 @@ export class MemoPad {
           content: s.content,
           version: s.version,
           createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
           eventRef: s.eventRef,
           remoteRev: changed ? local.remoteRev + 1 : local.remoteRev,
         });
@@ -275,7 +284,13 @@ export class MemoPad {
         const block = out[index];
         removeDraft(draft.key);
         if (draft.content === block.content) continue;
-        out[index] = { ...block, content: draft.content, version: draft.baseVersion, status: "pending" };
+        out[index] = {
+          ...block,
+          content: draft.content,
+          version: draft.baseVersion,
+          updatedAt: draft.savedAt,
+          status: "pending",
+        };
         this.persist(out[index]);
         continue;
       }
@@ -290,6 +305,7 @@ export class MemoPad {
         content: draft.content,
         version: 0,
         createdAt: draft.createdAt,
+        updatedAt: draft.savedAt,
         eventRef: null,
         status: "pending",
         remoteRev: 0,
@@ -306,44 +322,74 @@ export class MemoPad {
   edit(key: string, content: string): void {
     const block = this.find(key);
     if (!block || block.content === content) return;
-    this.patchBlock(key, { content, status: "pending" });
+    this.setBlocks(
+      sortBlocks(
+        this.state.blocks.map((b) =>
+          b.key === key ? { ...b, content, status: "pending", updatedAt: this.now().toISOString() } : b,
+        ),
+      ),
+    );
     this.persist(this.find(key)!);
     this.schedule(key);
   }
 
-  /** New empty block at the top (reuses an untouched empty one). Returns its key. */
-  addBlock(): string {
-    const top = this.state.blocks[0];
-    if (top && top.id === null && top.content === "") return top.key;
-    const block = this.newLocal("", "saved");
-    this.setBlocks([block, ...this.state.blocks]);
+  /**
+   * New memo file at the top, optionally starting with `content` (e.g. a title
+   * line). Reuses an untouched empty one. Returns its key.
+   */
+  addBlock(content = ""): string {
+    const empty = this.state.blocks.find((b) => b.id === null && b.content === "" && b.eventRef === null);
+    if (empty && content === "") return empty.key;
+    const block = this.newLocal(content, content === "" ? "saved" : "pending");
+    this.setBlocks([block, ...this.state.blocks.filter((b) => b !== empty)]);
+    if (content !== "") {
+      this.persist(block);
+      this.schedule(block.key);
+    }
     return block.key;
   }
 
   /**
-   * Removes an empty block (Backspace in an empty editor). Refuses if it has
-   * text or is the only block. The server delete is version-checked: if another
-   * device wrote in it meanwhile, the block comes back with that text.
+   * Drops a memo that has no text (left empty, or emptied). Event memos stay:
+   * they belong to their event. The server delete is version-checked: if another
+   * device wrote in it meanwhile, the memo comes back with that text.
    */
   removeBlock(key: string): boolean {
     const block = this.find(key);
-    if (!block || block.content !== "" || this.state.blocks.length <= 1) return false;
-    const m = this.meta.get(key);
-    if (m?.timer) clearTimeout(m.timer);
-    this.meta.delete(key);
-    this.setBlocks(this.state.blocks.filter((b) => b.key !== key));
-    removeDraft(key);
-    if (block.id) {
-      this.api.deleteBlock(block.id, block.version).then(
-        (result) => {
-          if (!result.ok) this.setBlocks(sortBlocks([...this.state.blocks, fromServer(result.current)]));
-        },
-        () => {
-          // Offline: the empty block may show up again on the next load. No text is lost.
-        },
-      );
-    }
+    if (!block || block.content.trim() !== "" || block.eventRef) return false;
+    this.drop(block);
     return true;
+  }
+
+  /**
+   * Deletes a memo the user chose to delete, text and all. Version-checked: if
+   * another device changed it since, it comes back with that text and a notice.
+   */
+  deleteBlock(key: string): boolean {
+    const block = this.find(key);
+    if (!block) return false;
+    this.drop(block, true);
+    return true;
+  }
+
+  private drop(block: PadBlock, notifyConflict = false): void {
+    const m = this.meta.get(block.key);
+    if (m?.timer) clearTimeout(m.timer);
+    this.meta.delete(block.key);
+    this.setBlocks(this.state.blocks.filter((b) => b.key !== block.key));
+    removeDraft(block.key);
+    if (!block.id) return;
+    this.api.deleteBlock(block.id, block.version).then(
+      (result) => {
+        if (result.ok) return;
+        const back = fromServer(result.current);
+        this.setBlocks(sortBlocks([...this.state.blocks, back]));
+        if (notifyConflict) this.set({ notice: { kind: "deleteConflict", key: back.key } });
+      },
+      () => {
+        // Offline: the memo may show up again on the next load. No text is lost.
+      },
+    );
   }
 
   dismissNotice(): void {
@@ -353,12 +399,14 @@ export class MemoPad {
   // ---- saving --------------------------------------------------------------
 
   private newLocal(content: string, status: BlockStatus): PadBlock {
+    const now = this.now().toISOString();
     return {
       key: newKey(),
       id: null,
       content,
       version: 0,
-      createdAt: this.now().toISOString(),
+      createdAt: now,
+      updatedAt: now,
       eventRef: null,
       status,
       remoteRev: 0,

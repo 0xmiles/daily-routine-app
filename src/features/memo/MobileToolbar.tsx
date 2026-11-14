@@ -8,7 +8,8 @@ export interface MobileToolbarProps {
   onIndent(): void;
   onOutdent(): void;
   onBold(): void;
-  onNewBlock(): void;
+  /** Optional: shows a "새 메모" tool. */
+  onNewBlock?(): void;
   onDone(): void;
 }
 
@@ -35,7 +36,7 @@ const keepFocus = (event: MouseEvent) => event.preventDefault();
 
 /**
  * Tool bar that sits on top of the iPhone keyboard while a memo block is being
- * edited (under 900px): 들여쓰기, 내어쓰기, 굵게, 새 블록, 완료.
+ * edited (under 900px): 들여쓰기, 내어쓰기, 굵게, 완료 (and 새 메모 when asked).
  */
 export function MobileToolbar({ onIndent, onOutdent, onBold, onNewBlock, onDone }: MobileToolbarProps) {
   const inset = useKeyboardInset();
@@ -51,9 +52,11 @@ export function MobileToolbar({ onIndent, onOutdent, onBold, onNewBlock, onDone 
       <button type="button" className={`${styles.tool} ${styles.bold}`} aria-label="굵게" onMouseDown={keepFocus} onClick={onBold}>
         B
       </button>
-      <button type="button" className={styles.tool} aria-label="새 블록" onMouseDown={keepFocus} onClick={onNewBlock}>
-        <NewBlockIcon />
-      </button>
+      {onNewBlock && (
+        <button type="button" className={styles.tool} aria-label="새 메모" onMouseDown={keepFocus} onClick={onNewBlock}>
+          <NewBlockIcon />
+        </button>
+      )}
       <button type="button" className={styles.done} aria-label="완료" onMouseDown={keepFocus} onClick={onDone}>
         완료
       </button>

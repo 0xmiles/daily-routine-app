@@ -6,13 +6,16 @@ import { boldDecorations, deleteBackwardAroundBold, toggleBold } from "./bold";
 import { currentLineHighlight } from "./currentLine";
 import { indentGuides } from "./guides";
 import { INDENT, continueList, indentLines, outdentLines } from "./indent";
+import { firstLineTitle } from "./title";
 
 export { boldSpans, toggleBold } from "./bold";
 export { continueList, indentLines, outdentLines } from "./indent";
 
 export interface MemoEditorOptions {
-  /** Mod-Enter: make a new block at the top of the memo pad. */
+  /** Mod-Enter: start a new memo file. */
   onNewBlock(): void;
+  /** Set the first line as the memo's title (larger, bold). */
+  titled?: boolean;
   /**
    * ArrowUp on the first (visual) line / ArrowDown on the last: move to the
    * neighbouring block. Return `false` when there is no block that way, and the
@@ -56,6 +59,13 @@ const memoTheme = EditorView.theme({
       "linear-gradient(90deg, color-mix(in srgb, var(--marker) 75%, transparent), color-mix(in srgb, var(--marker) 15%, transparent))",
   },
   ".cm-memo-bold": { fontWeight: "700" },
+  ".cm-memo-title": {
+    fontSize: "1.5em",
+    fontWeight: "700",
+    lineHeight: "1.4",
+    letterSpacing: "-0.025em",
+    paddingBottom: "0.35em",
+  },
   ".cm-memo-bullet": { color: "var(--pencil)" },
   ".cm-memo-guide": {
     display: "inline-block",
@@ -99,6 +109,7 @@ export function memoExtensions(opts: MemoEditorOptions): Extension[] {
     boldDecorations,
     indentGuides,
     currentLineHighlight,
+    opts.titled ? firstLineTitle : [],
     memoTheme,
   ];
 }

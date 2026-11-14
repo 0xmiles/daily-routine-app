@@ -51,29 +51,33 @@ export function Drawer({ id, mode, pathname, pinned, onTogglePin, onNavigate, on
       className={cx(styles.panel, mode === "overlay" ? styles.floating : styles.sidebar)}
     >
       <div className={styles.head}>
-        <span className={styles.logo}>데일리</span>
+        <span className={styles.logo}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- tiny static brand mark */}
+          <img src="/icons/mark.svg" alt="" className={styles.mark} width={26} height={26} />
+          데일리
+        </span>
         <button
           type="button"
           className={cx(styles.pin, pinned && styles.pinOn)}
           aria-pressed={pinned}
           onClick={onTogglePin}
         >
-          <PinIcon size={13} />
+          <PinIcon size={14} />
           고정
         </button>
       </div>
       <nav aria-label="전체 메뉴" className={styles.nav}>
         <div className={styles.group}>
-          {item("/today", "할 일", section === "todo" && todoView === null, <TodoIcon size={16} />)}
+          {item("/today", "할 일", section === "todo" && todoView === null, <TodoIcon size={18} />)}
           {item("/today", "오늘", todoView === "today", null, true)}
           {item("/calendar", "달력", todoView === "calendar", null, true)}
           {item("/list", "목록", todoView === "list", null, true)}
-          {item("/memo", "메모", section === "memo", <MemoIcon size={16} />)}
-          {item("/assets", "자산", section === "assets", <AssetsIcon size={16} />)}
+          {item("/memo", "메모", section === "memo", <MemoIcon size={18} />)}
+          {item("/assets", "자산", section === "assets", <AssetsIcon size={18} />)}
         </div>
         <div className={styles.bottom}>
-          {item("/assets", "거래내역 올리기", false, <UploadIcon size={16} />)}
-          {item("/settings", "설정", section === "settings", <SettingsIcon size={16} />)}
+          {item("/assets", "거래내역 올리기", false, <UploadIcon size={18} />)}
+          {item("/settings", "설정", section === "settings", <SettingsIcon size={18} />)}
         </div>
       </nav>
     </aside>

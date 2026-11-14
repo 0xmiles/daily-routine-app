@@ -68,7 +68,8 @@ export function TodoListPage() {
                 onChange={() => setFilter(f.value)}
                 className={styles.srOnly}
               />
-              <span className={filter === f.value ? "hl" : undefined}>{f.label}</span>
+              {f.value !== "all" && <span className={cx(styles.dot, styles[f.value])} aria-hidden="true" />}
+              {f.label}
             </label>
           ))}
         </div>
@@ -82,9 +83,6 @@ export function TodoListPage() {
             <span className={styles.toggleBox} aria-hidden="true" />
             완료한 것 보기
           </button>
-          <Button variant="outline" className={styles.addButton} onClick={() => openEditor(null)}>
-            할 일 추가
-          </Button>
         </div>
       </div>
 
@@ -128,6 +126,15 @@ export function TodoListPage() {
           </section>
         );
       })}
+
+      {status === "ready" && (
+        <button type="button" className={styles.add} onClick={() => openEditor(null)}>
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+          할 일 추가
+        </button>
+      )}
 
       <TodoEditorSheet
         open={editor.open}

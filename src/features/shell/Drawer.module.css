@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: var(--z-drawer);
 }
 
 .scrim {
@@ -14,8 +14,8 @@
 .panel {
   display: flex;
   flex-direction: column;
-  width: 236px;
-  padding: 16px 12px calc(16px + env(safe-area-inset-bottom));
+  width: var(--sidebar-w);
+  padding: 0 12px calc(16px + env(safe-area-inset-bottom));
   background: var(--paper);
   color: var(--ink);
 }
@@ -40,17 +40,32 @@
   overflow-y: auto;
 }
 
+/* Same height and rule as the top bar, so the two read as one line. */
 .head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 6px 14px;
+  gap: 10px;
+  min-height: var(--bar-h);
+  margin: 0 -12px 12px;
+  padding: 0 14px 0 18px;
+  border-bottom: 1px solid var(--rule);
 }
 
 .logo {
-  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+.mark {
+  display: block;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  box-shadow: 0 0 0 1px var(--rule);
 }
 
 .pin {
@@ -109,10 +124,10 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  min-height: 36px;
+  min-height: 40px;
   padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: 14.5px;
   color: var(--pencil);
   text-decoration: none;
 }
@@ -126,15 +141,20 @@
 }
 
 .sub {
-  min-height: 32px;
-  padding-left: 35px;
-  font-size: 13.5px;
+  min-height: 36px;
+  padding-left: 37px;
+  font-size: 14px;
 }
 
 .item:hover,
 .sub:hover {
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  background: var(--hover);
   color: var(--ink);
+}
+
+.item:active,
+.sub:active {
+  background: var(--press);
 }
 
 .item:focus-visible,
@@ -144,6 +164,7 @@
 }
 
 .on {
+  background: var(--selected);
   color: var(--ink);
   font-weight: 600;
 }

@@ -1,19 +1,21 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useEffectEvent, useId, useRef, useState, type ReactNode } from "react";
 import { EventEditorSheet } from "@/features/calendar/EventEditorSheet";
 import { TodoEditorSheet } from "@/features/todos/TodoEditorSheet";
 import { cx } from "@/ui/primitives";
 import { BottomTabs } from "./BottomTabs";
 import { Drawer } from "./Drawer";
-import { MenuIcon } from "./icons";
+import { requestNewMemo } from "./events";
+import { MenuIcon, SettingsIcon } from "./icons";
 import { readPref, writePref } from "./prefs";
 import { QuickAdd, type QuickAddKind } from "./QuickAdd";
 import { SECTION_TITLES, sectionOf } from "./sections";
 import { TodoSegment, todoViewOf } from "./TodoSegment";
 import { useBodyFlag } from "./useBodyFlag";
-import { useIsWide } from "./useMediaQuery";
+import { useIsWide, useMediaQuery } from "./useMediaQuery";
 import styles from "./AppShell.module.css";
 
 interface DrawerPref {
@@ -22,6 +24,8 @@ interface DrawerPref {
 }
 
 const DRAWER_PREF = "drawer";
+/** With no saved choice, the menu starts pinned as a sidebar on roomy screens. */
+const ROOMY_QUERY = "(min-width: 1200px)";
 const TOAST_MS = 4000;
 
 type Editor = { kind: "todo" } | { kind: "event"; title: string } | null;
@@ -36,14 +40,23 @@ function isN(e: KeyboardEvent): boolean {
 }
 
 /**
- * App frame. Under 900px: bottom tabs + round + button. At 900px and wider:
- * a top bar with ☰ (⌘\), the 할 일 segment and "새로 만들기 ⌘N"; the drawer
- * covers the content, or stays as a sidebar when pinned (remembered per device).
+ * App frame. One top bar in the same place on every screen:
+ * - under 900px: the 할 일 segment (or the section name) and a settings button;
+ *   bottom tabs and a floating + button sit below.
+ * - 900px and wider: ☰ (⌘\), the segment or section name, "새로 만들기 ⌘N".
+ *   The drawer covers the content, or stays as a sidebar when pinned
+ *   (remembered per device; pinned by default on screens ≥1200px).
+ *
+ * A page can take over the phone top bar (e.g. the memo editor with its own back
+ * button) by setting `document.body.dataset.ownHeader = "true"`.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const wide = useIsWide();
+  const roomy = useMediaQuery(ROOMY_QUERY);
   const editing = useBodyFlag("editing");
+  const ownHeader = useBodyFlag("ownHeader");
   const drawerId = useId();
   const menuButton = useRef<HTMLButtonElement>(null);
 
@@ -59,14 +72,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Restore the pinned sidebar on this device. This must run after hydration:
   // the server can't read localStorage, so reading it during render would
   // produce markup that differs from the server's.
+  const restored = useRef(false);
   useEffect(() => {
-    const pref = readPref<DrawerPref>(DRAWER_PREF, { pinned: false, open: false });
-    if (pref && pref.pinned) {
+    if (restored.current || roomy === null) return;
+    restored.current = true;
+    const pref = readPref<DrawerPref | null>(DRAWER_PREF, null);
+    const pin = pref ? pref.pinned : roomy;
+    if (pin) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- post-hydration restore from localStorage
       setPinned(true);
-      setDrawerOpen(pref.open !== false);
+      setDrawerOpen(pref ? pref.open !== false : true);
     }
-  }, []);
+  }, [roomy]);
 
   // Keep the service worker (push notifications) registered and up to date.
   useEffect(() => {
@@ -93,6 +110,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   function openQuickAdd() {
     if (!pinned) setDrawerOpen(false);
+    // On the memo tab, + / ⌘N opens a new memo right away (no sheet).
+    if (section === "memo") {
+      setQuickOpen(false);
+      requestNewMemo();
+      return;
+    }
     setEditor(null);
     setQuickOpen(true);
   }
@@ -124,9 +147,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("keydown", listener);
   }, []);
 
-  const showTop = wide !== false;
   const showTabs = wide !== true && !editing;
   const showDrawer = wide !== false && drawerOpen;
+  const hideNarrowBar = wide !== true && (editing || ownHeader);
+  const heading = todoView ? (
+    <TodoSegment active={todoView} variant="bar" />
+  ) : (
+    section && <span className={styles.title}>{SECTION_TITLES[section]}</span>
+  );
 
   return (
     <div className={cx(styles.shell, showTabs && styles.withTabs)}>
@@ -147,36 +175,39 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <div className={styles.column}>
-        {showTop && (
-          <header className={styles.topBar}>
+        <header className={cx(styles.topBar, hideNarrowBar && styles.barHidden)}>
+          {wide !== false && (
             <button
               ref={menuButton}
               type="button"
-              className={styles.menuButton}
+              className={cx(styles.iconButton, styles.wideOnly)}
               aria-label="메뉴 열기"
               aria-expanded={drawerOpen}
               aria-controls={drawerOpen ? drawerId : undefined}
               aria-keyshortcuts="Meta+Backslash"
               onClick={() => setDrawer(!drawerOpen)}
             >
-              <MenuIcon size={15} />
+              <MenuIcon size={18} />
             </button>
-            {todoView ? (
-              <TodoSegment active={todoView} variant="bar" />
-            ) : (
-              section && <span className={styles.title}>{SECTION_TITLES[section]}</span>
-            )}
+          )}
+          {heading}
+          {wide !== false && (
             <button
               type="button"
-              className={styles.newButton}
+              className={cx(styles.newButton, styles.wideOnly)}
               aria-keyshortcuts="Meta+N"
               onClick={openQuickAdd}
             >
-              새로 만들기
+              {section === "memo" ? "새 메모" : "새로 만들기"}
               <kbd className={cx("num", styles.kbd)}>⌘N</kbd>
             </button>
-          </header>
-        )}
+          )}
+          {wide !== true && section !== "settings" && (
+            <Link href="/settings" className={cx(styles.iconButton, styles.narrowOnly, styles.end)} aria-label="설정">
+              <SettingsIcon size={20} />
+            </Link>
+          )}
+        </header>
 
         <main id="main" className={styles.main} tabIndex={-1}>
           {children}
@@ -200,7 +231,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <QuickAdd
         open={quickOpen}
         onClose={() => setQuickOpen(false)}
-        defaultKind={todoView === "calendar" ? "event" : "todo"}
+        defaultKind={section === "memo" ? "memo" : todoView === "calendar" ? "event" : "todo"}
+        onMemoCreated={(href: string) => {
+          setQuickOpen(false);
+          router.push(href);
+        }}
         onSaved={(text) => {
           setQuickOpen(false);
           setToast({ id: Date.now(), text });

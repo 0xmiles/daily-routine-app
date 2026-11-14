@@ -8,7 +8,6 @@ import { ConnectPersonalHint } from "@/features/shell/ConnectPersonalHint";
 import { onDataChanged } from "@/features/shell/events";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/features/shell/icons";
 import { setPersonalConnected } from "@/features/shell/personalConnection";
-import { TodoSegment } from "@/features/shell/TodoSegment";
 import { useIsWide } from "@/features/shell/useMediaQuery";
 import { completeTodo, fetchTodos, TODOS_CHANGED_EVENT, uncompleteTodo } from "@/features/todos/client";
 import { todayBucket } from "@/features/todos/rules";
@@ -211,7 +210,6 @@ export function TodayPage({ initialDate, today: serverToday }: TodayPageProps) {
         </div>
       </div>
       <div className={styles.perf} aria-hidden="true" />
-      <TodoSegment active="today" />
 
       <section className={styles.eventsCol} aria-labelledby={eventsHeading}>
         <div className={styles.secHead}>

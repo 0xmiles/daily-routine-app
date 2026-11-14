@@ -95,6 +95,33 @@ describe("AppShell narrow (<900px)", () => {
     expect(screen.getByRole("link", { name: "할 일" }).getAttribute("aria-current")).toBeNull();
   });
 
+  it("phone top bar has a settings button; on the memo tab + opens a new memo directly", async () => {
+    setWide(false);
+    nav.pathname = "/memo";
+    const onNew = vi.fn();
+    window.addEventListener("daily:new-memo", onNew);
+    renderShell();
+    expect(screen.getByRole("link", { name: "설정" }).getAttribute("href")).toBe("/settings");
+    await userEvent.click(screen.getByRole("button", { name: "새 메모" }));
+    expect(onNew).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog", { name: "빠른 추가" })).toBeNull();
+    window.removeEventListener("daily:new-memo", onNew);
+  });
+
+  it("hides the phone top bar while a page shows its own header (memo file)", async () => {
+    setWide(false);
+    nav.pathname = "/memo";
+    renderShell();
+    expect(screen.getByRole("banner").className).not.toMatch(/barHidden/);
+    act(() => {
+      document.body.dataset.ownHeader = "true";
+    });
+    await waitFor(() => expect(screen.getByRole("banner", { hidden: true }).className).toMatch(/barHidden/));
+    act(() => {
+      delete document.body.dataset.ownHeader;
+    });
+  });
+
   it("hides the tab bar while the memo editor sets body[data-editing]", async () => {
     setWide(false);
     renderShell();
@@ -184,6 +211,17 @@ describe("AppShell wide (≥900px)", () => {
 });
 
 describe("QuickAdd", () => {
+  it("메모 goes to the memo page with the typed first line", async () => {
+    setWide(false);
+    renderShell();
+    await userEvent.click(screen.getByRole("button", { name: "빠른 추가" }));
+    const dialog = screen.getByRole("dialog", { name: "빠른 추가" });
+    await userEvent.click(within(dialog).getByRole("radio", { name: "메모" }));
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "제목" }), "회의 준비{Enter}");
+    expect(nav.push).toHaveBeenCalledWith(`/memo?new=${encodeURIComponent("회의 준비")}`);
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "빠른 추가" })).toBeNull());
+  });
+
   it("quick add todo with title only calls createTodo", async () => {
     setWide(false);
     renderShell();

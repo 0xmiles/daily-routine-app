@@ -7,7 +7,6 @@ import { ConnectPersonalHint } from "@/features/shell/ConnectPersonalHint";
 import { onDataChanged } from "@/features/shell/events";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/features/shell/icons";
 import { setPersonalConnected } from "@/features/shell/personalConnection";
-import { TodoSegment } from "@/features/shell/TodoSegment";
 import { EventRow } from "@/features/today/EventRow";
 import { eventKeyOf, eventsOn, holidayOn } from "@/features/today/eventUtils";
 import { useNow } from "@/features/today/useNow";
@@ -138,7 +137,6 @@ export function CalendarPage({ initialDate, today: serverToday }: CalendarPagePr
           </button>
         </div>
       </header>
-      <TodoSegment active="calendar" />
 
       <div className={styles.body}>
         <div className={styles.gridCol}>

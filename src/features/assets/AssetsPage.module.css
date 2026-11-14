@@ -4,7 +4,7 @@
   width: 100%;
   max-width: 760px;
   margin: 0 auto;
-  padding: 8px 16px 40px;
+  padding: 16px var(--gutter) 40px;
 }
 
 .head {

@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "설정" };
 export default function SettingsPage() {
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>설정</h1>
+      <h1 className="sr-only">설정</h1>
 
       <ConnectionsSection />
 

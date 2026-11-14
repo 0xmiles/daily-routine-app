@@ -12,18 +12,19 @@ const ITEMS: Array<{ view: TodoView; href: string; label: string }> = [
 
 export interface TodoSegmentProps {
   active: TodoView;
-  /**
-   * `page` (default): placed inside a 할 일 page; hidden at ≥900px because the
-   * shell's top bar shows the segment there. `bar`: the top-bar copy.
-   */
-  variant?: "page" | "bar";
+  /** Kept for callers; the segment lives only in the shell's top bar now. */
+  variant?: "bar";
   className?: string;
 }
 
-/** 오늘 · 달력 · 목록 switch inside the 할 일 tab. The selected one is highlighted. */
-export function TodoSegment({ active, variant = "page", className }: TodoSegmentProps) {
+/**
+ * 오늘 · 달력 · 목록 switch inside the 할 일 tab. Rendered once, by the shell's
+ * top bar, so it sits in the same place on all three views. The selected one is
+ * highlighted (marker underlay, spec §5.7 rule 4).
+ */
+export function TodoSegment({ active, className }: TodoSegmentProps) {
   return (
-    <nav aria-label="할 일 보기" className={cx(styles.segment, styles[variant], className)}>
+    <nav aria-label="할 일 보기" className={cx(styles.segment, className)}>
       {ITEMS.map((item) => {
         const on = item.view === active;
         return (

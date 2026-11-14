@@ -297,7 +297,7 @@ export function AssetsPage() {
     return (
       <div className={styles.page}>
         <header className={styles.head}>
-          <h1 className={styles.heading}>자산</h1>
+          <h1 className="sr-only">자산</h1>
           {load.status === "loading" ? (
             <p className={styles.sentence}>자산을 불러오는 중이에요.</p>
           ) : (
@@ -321,7 +321,7 @@ export function AssetsPage() {
     return (
       <div className={styles.page}>
         <header className={styles.head}>
-          <h1 className={styles.heading}>자산</h1>
+          <h1 className="sr-only">자산</h1>
         </header>
         <section className={styles.emptyState}>
           <div className={styles.emptyPassbook} aria-hidden="true" />
@@ -345,7 +345,7 @@ export function AssetsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <h1 className={styles.heading}>자산</h1>
+        <h1 className="sr-only">자산</h1>
         <p className={styles.sentence}>
           <Segments segments={summarySegments(summary.accounts.length, summary.total)} />
         </p>

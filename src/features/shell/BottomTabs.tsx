@@ -18,7 +18,10 @@ export interface BottomTabsProps {
   className?: string;
 }
 
-/** Under 900px: 할 일 / 메모 / 자산 tabs and the round ink + button. */
+/**
+ * Under 900px: 할 일 / 메모 / 자산 tabs, evenly spread, and a round ink +
+ * button floating above the bar's right end (not part of the tab row).
+ */
 export function BottomTabs({ pathname, onQuickAdd, className }: BottomTabsProps) {
   const current = sectionOf(pathname);
   return (
@@ -33,14 +36,19 @@ export function BottomTabs({ pathname, onQuickAdd, className }: BottomTabsProps)
               className={cx(styles.tab, on && styles.on)}
               aria-current={on ? "page" : undefined}
             >
-              <Icon strokeWidth={on ? 2 : 1.8} />
+              <Icon size={22} strokeWidth={on ? 2.1 : 1.8} />
               <span className={on ? "hl" : undefined}>{label}</span>
             </Link>
           );
         })}
       </nav>
-      <button type="button" className={styles.fab} aria-label="빠른 추가" onClick={onQuickAdd}>
-        <PlusIcon size={20} />
+      <button
+        type="button"
+        className={styles.fab}
+        aria-label={current === "memo" ? "새 메모" : "빠른 추가"}
+        onClick={onQuickAdd}
+      >
+        <PlusIcon size={24} />
       </button>
     </div>
   );

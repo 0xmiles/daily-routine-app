@@ -2,337 +2,299 @@
 
 import type { StateCommand } from "@codemirror/state";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
-import { flushSync } from "react-dom";
+import { useSearchParams } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
+import { onDataChanged, onNewMemoRequest } from "@/features/shell/events";
+import { useIsWide } from "@/features/shell/useMediaQuery";
 import { formatKoreanTimestamp } from "@/shared/time";
-import { Button, cx } from "@/ui/primitives";
+import { Button, Sheet, cx } from "@/ui/primitives";
 import { BlockEditor, type BlockEditorHandle } from "./BlockEditor";
+import { memoHref } from "./client";
 import { indentLines, outdentLines, toggleBold } from "./editor";
 import { EventLabel } from "./EventLabel";
-import { CloseIcon, NewBlockIcon, SearchIcon } from "./icons";
+import { formatMemoTime, memoPreview, memoTitle } from "./format";
+import { BackIcon, CalendarIcon, CloseIcon, FileIcon, PlusIcon, SearchIcon, TrashIcon } from "./icons";
 import styles from "./MemoPage.module.css";
 import { MobileToolbar } from "./MobileToolbar";
 import { MemoPad, type PadBlock } from "./store";
 
 export interface MemoPageProps {
-  /** From `/memo?block=<id>`: scroll to that block and focus it. */
-  focusBlockId?: string | null;
+  /** `?id=` (or the old `?block=`) from the server render; the URL is read live afterwards. */
+  initialId?: string | null;
 }
 
-const NARROW_QUERY = "(max-width: 899.98px)";
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-function matchMediaSafe(query: string): boolean {
-  try {
-    return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches;
-  } catch {
-    return false;
-  }
-}
-
-function useMediaQuery(query: string): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      if (typeof window === "undefined" || typeof window.matchMedia !== "function") return () => {};
-      const mql = window.matchMedia(query);
-      mql.addEventListener?.("change", onChange);
-      return () => mql.removeEventListener?.("change", onChange);
-    },
-    () => matchMediaSafe(query),
-    () => false,
-  );
-}
-
-const blockDomId = (key: string) => `memo-block-${key}`;
-
-function scrollToBlock(key: string): void {
-  const el = document.getElementById(blockDomId(key));
-  el?.scrollIntoView?.({ block: "center", behavior: matchMediaSafe(REDUCED_MOTION_QUERY) ? "auto" : "smooth" });
-}
+const UNTITLED = "새 메모";
 
 function matches(block: PadBlock, query: string): boolean {
   if (!query) return true;
   return block.content.toLowerCase().includes(query) || (block.eventRef?.title.toLowerCase().includes(query) ?? false);
 }
 
-function editorLabel(block: PadBlock): string {
-  if (block.eventRef) return `${block.eventRef.title} 일정 메모`;
-  return `${formatKoreanTimestamp(block.createdAt)}에 만든 메모`;
+/** The memo the URL names: by client key (new, unsaved files) or server id. */
+function findSelected(blocks: PadBlock[], ref: string | null): PadBlock | null {
+  if (!ref) return null;
+  return blocks.find((b) => b.key === ref || b.id === ref) ?? null;
+}
+
+function setUrl(href: string, how: "push" | "replace"): void {
+  if (how === "push") window.history.pushState(null, "", href);
+  else window.history.replaceState(null, "", href);
+}
+
+function statusText(block: PadBlock): string {
+  if (block.status === "pending") return "저장하고 있어요";
+  if (block.status === "offline") return "이 기기에 보관했어요";
+  return "저장했어요";
 }
 
 /**
- * The memo pad (spec §5.3): one long page of blocks, newest on top, one
- * CodeMirror per block.
+ * 메모 (spec §5.3, files edition): every memo is a file whose first line is its
+ * title. Phone: the list, then one file full screen with its own back button.
+ * 900px and wider: the list on the left and the open file on the right.
  *
- * Contract with the app shell: while a block is being edited on a narrow screen
- * (< 900px) this sets `document.body.dataset.editing = "true"`; the shell hides
- * the bottom tabs while that attribute is present.
+ * Contracts with the app shell (on phones):
+ * - `body[data-editing="true"]` while typing hides the bottom tabs and top bar;
+ * - `body[data-own-header="true"]` while a file is open hides the top bar, since
+ *   the file has its own header with a back button.
  */
-export function MemoPage({ focusBlockId = null }: MemoPageProps) {
+export function MemoPage({ initialId = null }: MemoPageProps) {
   const [pad] = useState(() => new MemoPad());
   const state = useSyncExternalStore(pad.subscribe, pad.getSnapshot, pad.getSnapshot);
-  const narrow = useMediaQuery(NARROW_QUERY);
+  const wide = useIsWide();
+  const params = useSearchParams();
+  const urlRef = params ? (params.get("id") ?? params.get("block")) : initialId;
+  const newRequest = params ? params.get("new") : null;
 
-  const editors = useRef(new Map<string, BlockEditorHandle>());
-  const pendingFocus = useRef<{ key: string; at: "start" | "end" } | null>(null);
-  const order = useRef<string[]>([]);
+  const editor = useRef<BlockEditorHandle | null>(null);
+  const pendingFocus = useRef<"start" | "end" | null>(null);
   const searchInput = useRef<HTMLInputElement>(null);
-  const searchButton = useRef<HTMLButtonElement>(null);
+  const openedFromList = useRef(false);
+  const searchHintId = useId();
 
-  /** Last block that had focus (cosmetic: which block is "current"). */
-  const [lastFocusedKey, setLastFocusedKey] = useState<string | null>(null);
-  const [editingKey, setEditingKey] = useState<string | null>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     pad.start();
     return () => pad.dispose();
   }, [pad]);
 
+  const selected = findSelected(state.blocks, urlRef);
   const q = query.trim().toLowerCase();
   const visible = state.blocks.filter((b) => matches(b, q));
+  const ready = state.phase === "ready";
 
-  useEffect(() => {
-    order.current = visible.map((b) => b.key);
-  });
+  // ---- navigation -------------------------------------------------------------
 
-  // ---- focus plumbing -----------------------------------------------------
-
-  // Refs and DOM only (no React state), so effects may call it.
-  const focusBlock = useCallback((key: string, at: "start" | "end") => {
-    const handle = editors.current.get(key);
-    if (!handle) {
-      pendingFocus.current = { key, at };
-      return;
-    }
-    pendingFocus.current = null;
-    scrollToBlock(key);
-    handle.focus(at);
-  }, []);
-
-  const register = useCallback((key: string, handle: BlockEditorHandle | null) => {
-    if (!handle) {
-      editors.current.delete(key);
-      return;
-    }
-    editors.current.set(key, handle);
-    const pending = pendingFocus.current;
-    if (pending?.key === key) {
-      pendingFocus.current = null;
-      scrollToBlock(key);
-      handle.focus(pending.at);
-    }
-  }, []);
-
-  const closeSearch = useCallback(() => {
-    setSearchOpen(false);
-    setQuery("");
-  }, []);
-
-  const newBlock = useCallback(() => {
-    closeSearch();
-    focusBlock(pad.addBlock(), "start");
-  }, [pad, focusBlock, closeSearch]);
-
-  const onBoundary = useCallback(
-    (key: string, dir: "up" | "down") => {
-      const keys = order.current;
-      const target = keys[keys.indexOf(key) + (dir === "up" ? -1 : 1)];
-      if (!target) return false;
-      focusBlock(target, dir === "up" ? "end" : "start");
-      return true;
+  const open = useCallback(
+    (key: string, how: "push" | "replace" = "push", focus: "start" | "end" | null = null) => {
+      const block = pad.find(key);
+      pendingFocus.current = focus;
+      if (how === "push") openedFromList.current = true;
+      setUrl(memoHref(block?.id ?? key), how);
     },
-    [focusBlock],
+    [pad],
   );
 
-  const onRemoveEmpty = useCallback(
-    (key: string) => {
-      const keys = order.current;
-      const index = keys.indexOf(key);
-      const neighbour = keys[index - 1] ?? keys[index + 1];
-      if (!neighbour || !pad.removeBlock(key)) return false;
-      focusBlock(neighbour, index > 0 ? "end" : "start");
-      return true;
+  const backToList = useCallback(() => {
+    if (openedFromList.current) {
+      openedFromList.current = false;
+      window.history.back();
+    } else {
+      setUrl("/memo", "replace");
+    }
+  }, []);
+
+  const newFile = useCallback(
+    (content = "") => {
+      setQuery("");
+      const key = pad.addBlock(content);
+      open(key, "push", "end");
     },
-    [pad, focusBlock],
+    [pad, open],
+  );
+
+  // A new file that just got its server id: put the id in the URL.
+  useEffect(() => {
+    if (selected?.id && urlRef !== selected.id) setUrl(memoHref(selected.id), "replace");
+  }, [selected?.id, urlRef]);
+
+  // Leaving a memo that has no text drops it (event memos stay).
+  const lastSelectedKey = useRef<string | null>(null);
+  useEffect(() => {
+    const previous = lastSelectedKey.current;
+    lastSelectedKey.current = selected?.key ?? null;
+    if (previous && previous !== selected?.key) pad.removeBlock(previous);
+  }, [selected?.key, pad]);
+
+  // Wide screens always show a file: the most recent one when none is named.
+  useEffect(() => {
+    if (wide !== true || !ready || urlRef || newRequest !== null) return;
+    const first = state.blocks[0];
+    if (first) setUrl(memoHref(first.id ?? first.key), "replace");
+  }, [wide, ready, urlRef, newRequest, state.blocks]);
+
+  // `?id=` that isn't loaded (just made from an event on another screen): load once.
+  const refetchedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!ready || !urlRef || selected || refetchedFor.current === urlRef) return;
+    refetchedFor.current = urlRef;
+    void pad.load();
+  }, [ready, urlRef, selected, pad]);
+
+  // `?new=<title>` from 빠른 추가 on another screen (once per request).
+  const handledNew = useRef(false);
+  useEffect(() => {
+    if (newRequest === null) {
+      handledNew.current = false;
+      return;
+    }
+    if (!ready || handledNew.current) return;
+    handledNew.current = true;
+    const title = newRequest.trim();
+    const key = pad.addBlock(title ? `${title}\n` : "");
+    open(key, "replace", "end");
+  }, [ready, newRequest, pad, open]);
+
+  // + / ⌘N on the memo tab.
+  useEffect(() => onNewMemoRequest(() => newFile()), [newFile]);
+
+  // An event memo made elsewhere (event sheet): pick it up.
+  useEffect(
+    () =>
+      onDataChanged((kind) => {
+        if (kind === "memo") void pad.load();
+      }),
+    [pad],
+  );
+
+  // ---- editor plumbing ----------------------------------------------------------
+
+  const register = useCallback(
+    (_key: string, handle: BlockEditorHandle | null) => {
+      editor.current = handle;
+      if (!handle) return;
+      const at = pendingFocus.current ?? (wide === true ? "end" : null);
+      pendingFocus.current = null;
+      if (at) handle.focus(at);
+    },
+    [wide],
   );
 
   const onChange = useCallback((key: string, content: string) => pad.edit(key, content), [pad]);
-
-  const onFocusChange = useCallback((key: string, focused: boolean) => {
+  const onFocusChange = useCallback((_key: string, focused: boolean) => {
     if (focused) {
-      setEditingKey(key);
-      setLastFocusedKey(key);
+      setEditing(true);
       return;
     }
-    // Focus may be moving to another block; only stop "editing" if no editor has it.
     setTimeout(() => {
       if (document.activeElement?.closest?.("[data-memo-editor]")) return;
-      setEditingKey((current) => (current === key ? null : current));
+      setEditing(false);
     }, 80);
   }, []);
 
-  // ---- ?block=<id> ----------------------------------------------------------
-
-  const handledFocusId = useRef<string | null>(null);
-  const refetchedFor = useRef<string | null>(null);
-  useEffect(() => {
-    if (!focusBlockId || state.phase !== "ready" || handledFocusId.current === focusBlockId) return;
-    const block = state.blocks.find((b) => b.id === focusBlockId);
-    if (block) {
-      handledFocusId.current = focusBlockId;
-      focusBlock(block.key, "end");
-    } else if (refetchedFor.current !== focusBlockId) {
-      // Just created from an event on another screen: load it.
-      refetchedFor.current = focusBlockId;
-      void pad.load();
-    }
-  }, [focusBlockId, state.phase, state.blocks, pad, focusBlock]);
-
-  // Empty memo pad on a wide screen: ready to type right away.
-  const autoFocused = useRef(false);
-  useEffect(() => {
-    if (autoFocused.current || state.phase !== "ready" || focusBlockId || narrow) return;
-    autoFocused.current = true;
-    const only = state.blocks.length === 1 ? state.blocks[0] : null;
-    if (only && only.id === null && only.content === "") focusBlock(only.key, "start");
-  }, [state.phase, state.blocks, focusBlockId, narrow, focusBlock]);
-
-  // ---- shortcuts and shell contract -----------------------------------------
-
-  useEffect(() => {
-    const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "f") {
-        event.preventDefault();
-        setSearchOpen(true);
-        requestAnimationFrame(() => searchInput.current?.focus());
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+  const runOnEditor = useCallback((command: StateCommand) => {
+    const handle = editor.current;
+    if (!handle) return;
+    command(handle.view);
+    handle.view.focus();
   }, []);
 
-  useEffect(() => {
-    if (searchOpen) searchInput.current?.focus();
-  }, [searchOpen]);
+  const finishEditing = useCallback(() => {
+    editor.current?.view.contentDOM.blur();
+    setEditing(false);
+  }, []);
 
-  const editingNarrow = narrow && editingKey !== null;
+  // ---- shell contract (phones) ----------------------------------------------------
+
+  const phone = wide === false;
+  const editingPhone = phone && editing && selected !== null;
   useEffect(() => {
-    if (!editingNarrow) return;
+    if (!editingPhone) return;
     document.body.dataset.editing = "true";
     return () => {
       delete document.body.dataset.editing;
     };
-  }, [editingNarrow]);
+  }, [editingPhone]);
 
-  // ---- tool bar -------------------------------------------------------------
+  const fileOnPhone = phone && selected !== null;
+  useEffect(() => {
+    if (!fileOnPhone) return;
+    document.body.dataset.ownHeader = "true";
+    return () => {
+      delete document.body.dataset.ownHeader;
+    };
+  }, [fileOnPhone]);
 
-  const runOnEditing = useCallback(
-    (command: StateCommand) => {
-      const handle = editingKey ? editors.current.get(editingKey) : undefined;
-      if (!handle) return;
-      command(handle.view);
-      handle.view.focus();
-    },
-    [editingKey],
-  );
+  // ---- search -----------------------------------------------------------------------
 
-  const finishEditing = useCallback(() => {
-    const handle = editingKey ? editors.current.get(editingKey) : undefined;
-    handle?.view.contentDOM.blur();
-    setEditingKey(null);
-  }, [editingKey]);
-
-  // ---- search -----------------------------------------------------------------
-
-  const toggleSearch = () => {
-    if (searchOpen) closeSearch();
-    else setSearchOpen(true);
-  };
+  useEffect(() => {
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "f") {
+        if (phone && selected) return;
+        event.preventDefault();
+        searchInput.current?.focus();
+        searchInput.current?.select();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [phone, selected]);
 
   const onSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape") {
       event.preventDefault();
-      closeSearch();
-      searchButton.current?.focus();
+      setQuery("");
     } else if (event.key === "Enter" && !event.nativeEvent.isComposing) {
       event.preventDefault();
       const first = visible[0];
-      if (!q || !first) return;
-      // Un-hide every block first so the scroll lands in the right place.
-      flushSync(closeSearch);
-      focusBlock(first.key, "end");
+      if (q && first) open(first.key, "push", "end");
     }
   };
 
   const searchResult = !q
     ? null
     : visible.length > 0
-      ? `${visible.length}개 블록에서 찾았어요. Enter를 누르면 첫 블록으로 이동해요.`
+      ? `메모 ${visible.length}개를 찾았어요. Enter를 누르면 첫 메모를 열어요.`
       : "찾는 내용이 들어간 메모가 없어요. 다른 낱말로 찾아보세요.";
 
-  // ---- render -----------------------------------------------------------------
+  // ---- delete -----------------------------------------------------------------------
 
-  const dimOthers = editingKey !== null;
-  const focusTargetKey = focusBlockId ? state.blocks.find((b) => b.id === focusBlockId)?.key : undefined;
-  const activeKey = editingKey ?? lastFocusedKey ?? focusTargetKey ?? null;
+  const deleteSelected = () => {
+    if (!selected) return;
+    const index = state.blocks.findIndex((b) => b.key === selected.key);
+    const next = state.blocks[index + 1] ?? state.blocks[index - 1] ?? null;
+    setConfirmDelete(false);
+    lastSelectedKey.current = null;
+    pad.deleteBlock(selected.key);
+    if (phone || !next) setUrl("/memo", "replace");
+    else setUrl(memoHref(next.id ?? next.key), "replace");
+  };
 
-  return (
-    <div className={styles.page} data-toolbar={editingNarrow || undefined}>
-      <header className={styles.header}>
-        <h1 className={styles.title}>메모</h1>
-        <div className={styles.actions}>
-          <button
-            type="button"
-            className={styles.iconButton}
-            aria-label="새 블록 만들기"
-            title="새 블록 만들기 (⌘Enter)"
-            onClick={newBlock}
-            disabled={state.phase !== "ready"}
-          >
-            <NewBlockIcon size={20} />
-          </button>
-          <button
-            ref={searchButton}
-            type="button"
-            className={styles.iconButton}
-            aria-label={searchOpen ? "메모 검색 닫기" : "메모 검색"}
-            title="메모 검색 (⌘F)"
-            aria-expanded={searchOpen}
-            aria-controls="memo-search"
-            onClick={toggleSearch}
-          >
-            {searchOpen ? <CloseIcon size={20} /> : <SearchIcon />}
-          </button>
-        </div>
-      </header>
+  // ---- render -----------------------------------------------------------------------
 
-      {searchOpen && (
-        <div className={styles.search} role="search">
-          <input
-            ref={searchInput}
-            id="memo-search"
-            type="search"
-            className={styles.searchInput}
-            aria-label="메모에서 찾기"
-            placeholder="메모 내용이나 일정 제목으로 찾기"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={onSearchKeyDown}
-            autoComplete="off"
-            enterKeyHint="search"
-          />
-          <p className={styles.searchResult} aria-live="polite">
-            {searchResult}
-          </p>
-        </div>
-      )}
+  const onRowClick = (event: MouseEvent<HTMLAnchorElement>, key: string) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    open(key, wide === true ? "replace" : "push");
+  };
 
-      {state.authRequired && state.phase === "ready" && (
+  const notices = (
+    <>
+      {state.authRequired && ready && (
         <p className={styles.status} role="status">
-          로그인이 풀려 저장하지 못했어요. 쓴 내용은 이 기기에 보관해 두었으니{" "}
-          <Link href="/login">다시 로그인</Link>해 주세요.
+          로그인이 풀려 저장하지 못했어요. 쓴 내용은 이 기기에 보관해 두었으니 <Link href="/login">다시 로그인</Link>해
+          주세요.
         </p>
       )}
       {state.offline && !state.authRequired && (
@@ -342,76 +304,235 @@ export function MemoPage({ focusBlockId = null }: MemoPageProps) {
       )}
       {state.notice?.kind === "conflict" && (
         <div className={styles.notice} role="status">
-          <p>다른 기기에서 먼저 고친 내용이 있어 그 내용을 보여 드리고, 여기서 쓴 내용은 맨 위 충돌 사본 블록으로 남겼어요.</p>
-          <button type="button" className={styles.noticeClose} onClick={() => pad.dismissNotice()}>
-            안내 닫기
+          <p>다른 기기에서 먼저 고친 내용이 있어 그 내용을 보여 드리고, 여기서 쓴 내용은 충돌 사본 메모로 따로 남겼어요.</p>
+          <div className={styles.noticeActions}>
+            <button
+              type="button"
+              className={styles.noticeButton}
+              onClick={() => {
+                const key = state.notice?.kind === "conflict" ? state.notice.copyKey : null;
+                pad.dismissNotice();
+                if (key) open(key, "push");
+              }}
+            >
+              사본 열기
+            </button>
+            <button type="button" className={styles.noticeButton} onClick={() => pad.dismissNotice()}>
+              안내 닫기
+            </button>
+          </div>
+        </div>
+      )}
+      {state.notice?.kind === "deleteConflict" && (
+        <div className={styles.notice} role="status">
+          <p>다른 기기에서 방금 고친 메모라 지우지 않고 남겨 두었어요. 내용을 확인한 뒤 다시 지워 주세요.</p>
+          <div className={styles.noticeActions}>
+            <button type="button" className={styles.noticeButton} onClick={() => pad.dismissNotice()}>
+              안내 닫기
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <div className={styles.page} data-view={selected ? "file" : "list"}>
+      <h1 className="sr-only">메모</h1>
+
+      <section className={styles.listPane} aria-label="메모 목록">
+        <div className={styles.listHead}>
+          <div className={styles.searchBox} role="search">
+            <SearchIcon size={18} />
+            <input
+              ref={searchInput}
+              type="search"
+              className={styles.searchInput}
+              aria-label="메모 찾기"
+              aria-describedby={q ? searchHintId : undefined}
+              placeholder="메모 찾기"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={onSearchKeyDown}
+              autoComplete="off"
+              enterKeyHint="search"
+            />
+            {query && (
+              <button type="button" className={styles.clear} aria-label="검색어 지우기" onClick={() => setQuery("")}>
+                <CloseIcon size={16} />
+              </button>
+            )}
+          </div>
+          <button
+            type="button"
+            className={cx(styles.iconButton, styles.newInList)}
+            aria-label="새 메모"
+            title="새 메모 (⌘N)"
+            onClick={() => newFile()}
+            disabled={!ready}
+          >
+            <PlusIcon />
           </button>
         </div>
-      )}
+        {searchResult && (
+          <p id={searchHintId} className={styles.searchResult} aria-live="polite">
+            {searchResult}
+          </p>
+        )}
 
-      {state.phase === "loading" && <p className={styles.loading}>메모를 불러오고 있어요.</p>}
-      {state.phase === "error" && (
-        <div className={styles.error} role="alert">
-          <p>{state.loadError}</p>
-          {state.authRequired ? (
-            <Link href="/login" className={styles.errorLink}>
-              다시 로그인하기
-            </Link>
-          ) : (
-            <Button variant="outline" onClick={() => void pad.load()}>
-              메모 다시 불러오기
-            </Button>
-          )}
-        </div>
-      )}
+        {!selected && <div className={styles.listNotices}>{notices}</div>}
 
-      {state.phase === "ready" && (
-        <div className={styles.blocks}>
-          {state.blocks.map((block) => {
-            const shown = matches(block, q);
-            return (
-              <section
-                key={block.key}
-                id={blockDomId(block.key)}
-                className={styles.block}
-                hidden={!shown}
-                data-block-id={block.id ?? undefined}
-                data-dim={(dimOthers && editingKey !== block.key) || undefined}
-                data-active={activeKey === block.key || undefined}
+        {state.phase === "loading" && <p className={styles.loading}>메모를 불러오고 있어요.</p>}
+        {state.phase === "error" && (
+          <div className={styles.error} role="alert">
+            <p>{state.loadError}</p>
+            {state.authRequired ? (
+              <Link href="/login" className={styles.errorLink}>
+                다시 로그인하기
+              </Link>
+            ) : (
+              <Button variant="outline" onClick={() => void pad.load()}>
+                메모 다시 불러오기
+              </Button>
+            )}
+          </div>
+        )}
+
+        {ready && state.blocks.length === 0 && (
+          <div className={styles.empty}>
+            <FileIcon />
+            <p className={styles.emptyTitle}>아직 메모가 없어요.</p>
+            <p className={styles.emptyText}>첫 줄이 메모 이름이 돼요. 일정에서 메모를 쓰면 여기에 함께 모여요.</p>
+            <Button onClick={() => newFile()}>새 메모 쓰기</Button>
+          </div>
+        )}
+
+        {ready && visible.length > 0 && (
+          <ul className={styles.files}>
+            {visible.map((block) => {
+              const title = memoTitle(block) || UNTITLED;
+              const preview = memoPreview(block);
+              const on = selected?.key === block.key;
+              return (
+                <li key={block.key}>
+                  <a
+                    href={memoHref(block.id ?? block.key)}
+                    className={styles.file}
+                    aria-current={on ? "page" : undefined}
+                    onClick={(event) => onRowClick(event, block.key)}
+                  >
+                    <span className={styles.fileTitle}>
+                      {block.eventRef && (
+                        <span className={styles.fileIcon} aria-label="일정 메모">
+                          <CalendarIcon size={13} />
+                        </span>
+                      )}
+                      <span className={styles.fileName}>{title}</span>
+                    </span>
+                    <span className={styles.fileMeta}>
+                      <span className={cx("num", styles.fileTime)}>{formatMemoTime(block.updatedAt)}</span>
+                      <span className={styles.filePreview}>{preview || "내용 없음"}</span>
+                    </span>
+                    {block.status === "offline" && <span className={styles.fileStatus}>이 기기에만 있어요</span>}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      <section className={styles.filePane} aria-label={selected ? `${memoTitle(selected) || UNTITLED} 메모` : "메모"}>
+        {selected ? (
+          <>
+            <header className={styles.fileHead}>
+              <button type="button" className={cx(styles.iconButton, styles.back)} onClick={backToList}>
+                <BackIcon />
+                <span>메모</span>
+              </button>
+              <span className={styles.fileStatusText} aria-live="polite">
+                {statusText(selected)}
+              </span>
+              <button
+                type="button"
+                className={styles.iconButton}
+                aria-label="이 메모 지우기"
+                title="이 메모 지우기"
+                onClick={() => setConfirmDelete(true)}
               >
-                <div className={styles.stamp}>
-                  <span className="num">{formatKoreanTimestamp(block.createdAt)}</span>
-                </div>
-                {block.eventRef && <EventLabel eventRef={block.eventRef} />}
-                <BlockEditor
-                  blockKey={block.key}
-                  content={block.content}
-                  remoteRev={block.remoteRev}
-                  label={editorLabel(block)}
-                  placeholder={state.blocks.length === 1 ? "여기에 메모를 써 보세요." : undefined}
-                  className={cx(styles.editor)}
-                  onChange={onChange}
-                  onNewBlock={newBlock}
-                  onBoundary={onBoundary}
-                  onRemoveEmpty={onRemoveEmpty}
-                  onFocusChange={onFocusChange}
-                  register={register}
-                />
-              </section>
-            );
-          })}
-        </div>
-      )}
+                <TrashIcon />
+              </button>
+            </header>
+            <div className={styles.paneNotices}>{notices}</div>
+            <article className={styles.doc} data-toolbar={editingPhone || undefined}>
+              <p className={styles.stamp}>
+                <span className="num">{formatKoreanTimestamp(selected.updatedAt)}</span>에 고침
+              </p>
+              {selected.eventRef && <EventLabel eventRef={selected.eventRef} className={styles.label} />}
+              <BlockEditor
+                key={selected.key}
+                blockKey={selected.key}
+                content={selected.content}
+                remoteRev={selected.remoteRev}
+                titled={!selected.eventRef}
+                label={selected.eventRef ? `${selected.eventRef.title} 일정 메모` : "메모 내용"}
+                placeholder={selected.eventRef ? "회의에서 나온 이야기를 적어 보세요." : "첫 줄에 메모 이름을 쓰고 Enter를 눌러 이어 써 보세요."}
+                className={styles.editor}
+                onChange={onChange}
+                onNewBlock={() => newFile()}
+                onBoundary={() => false}
+                onRemoveEmpty={() => false}
+                onFocusChange={onFocusChange}
+                register={register}
+              />
+            </article>
+          </>
+        ) : (
+          ready &&
+          state.blocks.length > 0 && (
+            <div className={styles.paneEmpty}>
+              {urlRef ? (
+                <>
+                  <p className={styles.emptyTitle}>이 메모를 찾지 못했어요.</p>
+                  <p className={styles.emptyText}>다른 기기에서 지웠을 수 있어요. 목록에서 다른 메모를 골라 주세요.</p>
+                  <Button variant="outline" onClick={() => setUrl("/memo", "replace")}>
+                    메모 목록 보기
+                  </Button>
+                </>
+              ) : (
+                <p className={styles.emptyText}>왼쪽 목록에서 메모를 고르세요.</p>
+              )}
+            </div>
+          )
+        )}
+      </section>
 
-      {editingNarrow && (
+      {editingPhone && (
         <MobileToolbar
-          onIndent={() => runOnEditing(indentLines)}
-          onOutdent={() => runOnEditing(outdentLines)}
-          onBold={() => runOnEditing(toggleBold)}
-          onNewBlock={newBlock}
+          onIndent={() => runOnEditor(indentLines)}
+          onOutdent={() => runOnEditor(outdentLines)}
+          onBold={() => runOnEditor(toggleBold)}
           onDone={finishEditing}
         />
       )}
+
+      <Sheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="이 메모를 지울까요?">
+        <div className={styles.confirm}>
+          <p>
+            {selected?.eventRef
+              ? "일정은 그대로 두고 이 일정에 쓴 메모만 지워요. 지운 메모는 되살릴 수 없어요."
+              : `‘${(selected && memoTitle(selected)) || UNTITLED}’ 메모를 지워요. 지운 메모는 되살릴 수 없어요.`}
+          </p>
+          <div className={styles.confirmActions}>
+            <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
+              그대로 두기
+            </Button>
+            <Button className={styles.danger} onClick={deleteSelected}>
+              메모 지우기
+            </Button>
+          </div>
+        </div>
+      </Sheet>
     </div>
   );
 }
