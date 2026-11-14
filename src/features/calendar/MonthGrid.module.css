@@ -76,10 +76,12 @@
   opacity: 0.32;
 }
 
-/* Today: circled with the highlighter, slightly uneven like a hand-drawn ring. */
+/* Today: an ink stamp, slightly uneven like a hand-drawn ring (the see-through
+   highlighter turns olive on black). */
 .today .n,
 .today:hover .n {
-  background: var(--marker);
+  background: var(--ink);
+  color: var(--paper);
   border-radius: 48% 52% 46% 54%;
   font-weight: 700;
 }

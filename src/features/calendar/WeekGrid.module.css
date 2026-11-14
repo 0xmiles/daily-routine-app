@@ -76,10 +76,11 @@
   }
 }
 
-/* Today: circled with the highlighter, like the month grid. */
+/* Today: an ink stamp, like the month grid (the see-through highlighter turns olive on black). */
 .today .dateNum,
 .today:hover .dateNum {
-  background: var(--marker);
+  background: var(--ink);
+  color: var(--paper);
   border-radius: 48% 52% 46% 54%;
   font-weight: 800;
 }
@@ -181,7 +182,7 @@
 }
 
 .todayCol {
-  background-color: color-mix(in srgb, var(--marker) 12%, transparent);
+  background-color: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
 @media (min-width: 900px) {
