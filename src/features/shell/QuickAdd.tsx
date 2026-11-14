@@ -7,7 +7,7 @@ import { seoulToday } from "@/shared/time";
 import { Button, Sheet, cx } from "@/ui/primitives";
 import { ConnectPersonalHint } from "./ConnectPersonalHint";
 import { NETWORK_ERROR, serverMessage } from "./errors";
-import { emitDataChanged } from "./events";
+import { emitDataChanged, stashNewMemoTitle } from "./events";
 import { usePersonalConnected } from "./personalConnection";
 import { nextFullHourSlot } from "./slots";
 import styles from "./QuickAdd.module.css";
@@ -21,7 +21,7 @@ export interface QuickAddProps {
   onSaved: (message: string) => void;
   /** "자세히": open the full editor for `kind`, carrying the typed title. */
   onMore: (kind: Exclude<QuickAddKind, "memo">, title: string) => void;
-  /** 메모: go to `href` (the memo page opens a new memo with the typed first line). */
+  /** 메모: go to `href`; the memo page opens a new memo with the typed (stashed) first line. */
   onMemoCreated: (href: string) => void;
   defaultKind?: QuickAddKind;
 }
@@ -88,7 +88,8 @@ function QuickAddForm({ onSaved, onMore, onMemoCreated, defaultKind }: Omit<Quic
     e?.preventDefault();
     const trimmed = title.trim();
     if (kind === "memo") {
-      onMemoCreated(`/memo?new=${encodeURIComponent(trimmed)}`);
+      stashNewMemoTitle(trimmed);
+      onMemoCreated("/memo?new");
       return;
     }
     if (!trimmed || saving || blocked) return;

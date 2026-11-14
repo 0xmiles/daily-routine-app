@@ -13,7 +13,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
-import { onDataChanged, onNewMemoRequest } from "@/features/shell/events";
+import { onDataChanged, onNewMemoRequest, takeNewMemoTitle } from "@/features/shell/events";
 import { useIsWide } from "@/features/shell/useMediaQuery";
 import { formatKoreanTimestamp } from "@/shared/time";
 import { Button, Sheet, cx } from "@/ui/primitives";
@@ -152,7 +152,9 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
     void pad.load();
   }, [ready, urlRef, selected, pad]);
 
-  // `?new=<title>` from 빠른 추가 on another screen (once per request).
+  // `?new` from 빠른 추가 on another screen (once per request). The typed first
+  // line comes from memory, never from the URL, so a crafted link can only open
+  // an empty memo, which is not saved until something is typed.
   const handledNew = useRef(false);
   useEffect(() => {
     if (newRequest === null) {
@@ -161,7 +163,7 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
     }
     if (!ready || handledNew.current) return;
     handledNew.current = true;
-    const title = newRequest.trim();
+    const title = takeNewMemoTitle()?.trim() ?? "";
     const key = pad.addBlock(title ? `${title}\n` : "");
     open(key, "replace", "end");
   }, [ready, newRequest, pad, open]);

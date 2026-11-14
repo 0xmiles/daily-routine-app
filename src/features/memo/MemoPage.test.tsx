@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EventRef, MemoBlock } from "@/shared/contracts";
+import { stashNewMemoTitle } from "@/features/shell/events";
 import { readDrafts } from "./draft";
 import { MemoPage } from "./MemoPage";
 
@@ -315,14 +316,25 @@ describe("MemoPage (files)", () => {
     expect(fileNames()).toEqual(["새 메모", "내 메모"]);
   });
 
-  it("?new=<title> (빠른 추가) opens a new memo whose first line is the title", async () => {
-    visit("?new=" + encodeURIComponent("회의 준비"));
+  it("?new from 빠른 추가 opens a new memo whose first line is the typed title", async () => {
+    stashNewMemoTitle("회의 준비");
+    visit("?new");
     serve([block()]);
     render(<MemoPage />);
     await waitFor(() => expect(onlyEditor().state.doc.toString()).toBe("회의 준비\n"));
     expect(fileNames()[0]).toBe("회의 준비");
     await waitFor(() => expect(posts()).toHaveLength(1), { timeout: 2000 });
     expect(posts()[0].body).toEqual({ content: "회의 준비\n" });
+  });
+
+  it("a link with ?new=<text> alone never writes a memo: it opens an empty one, saved only once typed in", async () => {
+    visit("?new=" + encodeURIComponent("누가 보낸 글"));
+    serve([block()]);
+    render(<MemoPage />);
+    await waitFor(() => expect(onlyEditor().state.doc.toString()).toBe(""));
+    await new Promise((r) => setTimeout(r, 1000));
+    expect(posts()).toHaveLength(0);
+    expect(readDrafts()).toHaveLength(0);
   });
 
   it("search filters the list by content and event title; Enter opens the first match", async () => {

@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "메모" };
 
 /**
  * /memo — the memo files. `?id=<id>` opens one (old `?block=<id>` links too);
- * `?new=<title>` starts a new memo (빠른 추가 from another screen).
+ * `?new` opens a new, empty memo (its first line, if any, comes from 빠른 추가 in memory).
  */
 export default async function Page({ searchParams }: PageProps<"/memo">) {
   const { id, block } = await searchParams;

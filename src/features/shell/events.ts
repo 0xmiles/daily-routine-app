@@ -29,6 +29,21 @@ export function requestNewMemo(): void {
   window.dispatchEvent(new CustomEvent(NEW_MEMO_EVENT));
 }
 
+// The first line typed in 빠른 추가 travels to the memo page in memory, not in
+// the URL: a link like /memo?new must never write a memo by itself.
+let pendingMemoTitle: string | null = null;
+
+export function stashNewMemoTitle(title: string): void {
+  pendingMemoTitle = title;
+}
+
+/** The stashed title (once), or null. */
+export function takeNewMemoTitle(): string | null {
+  const title = pendingMemoTitle;
+  pendingMemoTitle = null;
+  return title;
+}
+
 export function onNewMemoRequest(listener: () => void): () => void {
   window.addEventListener(NEW_MEMO_EVENT, listener);
   return () => window.removeEventListener(NEW_MEMO_EVENT, listener);

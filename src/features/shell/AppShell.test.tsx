@@ -33,6 +33,7 @@ vi.mock("@/features/todos/TodoEditorSheet", () => ({
 import { createEvent, fetchEvents } from "@/features/calendar/client";
 import { createTodo } from "@/features/todos/client";
 import { AppShell } from "./AppShell";
+import { takeNewMemoTitle } from "./events";
 import { resetPersonalConnectedForTests } from "./personalConnection";
 
 function setWide(wide: boolean) {
@@ -218,7 +219,9 @@ describe("QuickAdd", () => {
     const dialog = screen.getByRole("dialog", { name: "빠른 추가" });
     await userEvent.click(within(dialog).getByRole("radio", { name: "메모" }));
     await userEvent.type(within(dialog).getByRole("textbox", { name: "제목" }), "회의 준비{Enter}");
-    expect(nav.push).toHaveBeenCalledWith(`/memo?new=${encodeURIComponent("회의 준비")}`);
+    // The title goes to the memo page in memory; the URL only says "new".
+    expect(nav.push).toHaveBeenCalledWith("/memo?new");
+    expect(takeNewMemoTitle()).toBe("회의 준비");
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "빠른 추가" })).toBeNull());
   });
 
