@@ -266,3 +266,26 @@
     transition: none;
   }
 }
+
+/* ---------- week grid (달력 › 주) borrows these blocks in narrow columns ---------- */
+
+.compact {
+  padding: 2px 3px 2px 4px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.compact.work {
+  padding-left: 7px;
+}
+
+/* Narrow columns: the title wraps by letter instead of trailing off after one. */
+.compactTitle {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}

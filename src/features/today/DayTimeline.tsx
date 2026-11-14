@@ -5,6 +5,7 @@ import type { CalendarEvent } from "@/shared/contracts";
 import { seoulParts } from "@/shared/time";
 import { Tag, cx } from "@/ui/primitives";
 import { displayTitle, eventKeyOf, scopeOf, seoulOf } from "./eventUtils";
+import { HOUR_PX, MIN_BLOCK_PX, hourLabel, hourRange, hoursBetween, minutesOf, place } from "./timeline";
 import styles from "./DayTimeline.module.css";
 
 export interface DayTimelineProps {
@@ -19,57 +20,8 @@ export interface DayTimelineProps {
   onCreate?: (startTime: string) => void;
 }
 
-const HOUR_PX = 40;
-const DEFAULT_START = 9;
-const DEFAULT_END = 21;
-const MIN_BLOCK_PX = 24;
 /** Blocks shorter than this (an hour or less) get one line: title, then time and place beside it. */
 const TWO_LINE_PX = 40;
-
-const minutesOf = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
-const hourLabel = (h: number) => `${String(h).padStart(2, "0")}:00`;
-
-interface Placed {
-  event: CalendarEvent;
-  start: number; // minutes from 00:00 on `date`
-  end: number;
-  lane: number;
-  lanes: number;
-}
-
-/** Minutes on `date` covered by a timed event, clipped to the day. */
-function span(event: CalendarEvent, date: string): { start: number; end: number } {
-  const s = seoulOf(event.start);
-  const e = seoulOf(event.end);
-  const start = s.date < date ? 0 : minutesOf(s.time);
-  const end = e.date > date ? 24 * 60 : minutesOf(e.time);
-  return { start, end: Math.max(end, start + 15) };
-}
-
-/** Side-by-side lanes for overlapping events. */
-function place(events: CalendarEvent[], date: string): Placed[] {
-  const items = events
-    .map((event) => ({ event, ...span(event, date), lane: 0, lanes: 1 }))
-    .sort((a, b) => a.start - b.start || b.end - a.end);
-  let cluster: Placed[] = [];
-  let clusterEnd = -1;
-  const flush = () => {
-    const lanes = Math.max(1, ...cluster.map((p) => p.lane + 1));
-    for (const p of cluster) p.lanes = lanes;
-    cluster = [];
-  };
-  for (const item of items) {
-    if (item.start >= clusterEnd) flush();
-    const used = new Set(cluster.filter((p) => p.end > item.start).map((p) => p.lane));
-    let lane = 0;
-    while (used.has(lane)) lane++;
-    item.lane = lane;
-    cluster.push(item);
-    clusterEnd = Math.max(clusterEnd, item.end);
-  }
-  flush();
-  return items;
-}
 
 /** Arrow keys inside the hour rows: index of the row to focus next, or null for other keys. */
 function nextRow(key: string, index: number, last: number): number | null {
@@ -95,14 +47,8 @@ export function DayTimeline({ date, events, now, memoKeys, onOpen, onCreate }: D
 
   const nowTime = now ? seoulParts(now).time : null;
   const nowMinutes = nowTime ? minutesOf(nowTime) : null;
-  let startHour = DEFAULT_START;
-  let endHour = DEFAULT_END;
-  for (const p of placed) {
-    startHour = Math.min(startHour, Math.floor(p.start / 60));
-    endHour = Math.max(endHour, Math.ceil(p.end / 60));
-  }
-  const hours: number[] = [];
-  for (let h = startHour; h <= endHour; h++) hours.push(h);
+  const { startHour, endHour } = hourRange(placed);
+  const hours = hoursBetween(startHour, endHour);
   // One row per hour between the lines (the bottom line starts no row).
   const rows = hours.slice(0, -1);
   const tabHour = focusHour !== null && rows.includes(focusHour) ? focusHour : rows[0];
