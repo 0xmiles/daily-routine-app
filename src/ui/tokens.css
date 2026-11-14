@@ -1,59 +1,36 @@
 /*
  * Design tokens — spec §5.7 "일력 & 통장".
  * Components use these variables only; never write hex colors elsewhere.
- * (The one exception is src/ui/theme.ts, which mirrors --paper/--ink for
+ * (The one exception is src/ui/theme.ts, which mirrors the default --paper/--ink for
  * <meta name="theme-color"> and the web manifest, where CSS vars can't be used.)
  *
- * Fonts (src/app/layout.tsx):
- *   --font-num   Archivo (next/font; variable width — font-stretch / 'wdth') for dates and numbers
- *   --font-head  Hahmlet (next/font; variable weight) for headings — the printed-calendar voice
- *   body         Pretendard Variable (npm "pretendard", dynamic subsets) for everything you read and type
+ * Font: Pretendard Variable (npm "pretendard", dynamic subsets) for everything —
+ * headings, body and numbers. Numbers use its tabular figures (.num).
  *
- * Colour pencils (spec §9.4): seven fills, one per weekday and named after what the
- * weekday's name means — 일 해(pink), 월 달(lilac), 화 불(tangerine), 수 물(aqua),
- * 목 나무(green), 금 금빛(lemon), 토 파랑(sky). Each menu borrows one as its index
- * tab (할 일 lemon, 메모 pink, 자산 green, 설정 lilac); memos and accounts each get
- * their own (src/ui/hues.ts). They are fills only and always carry dark ink
- * (--on-index) in both themes, so contrast holds without per-colour text rules.
+ * Colours live in src/ui/themes.css: six themes, each with a light and a dark
+ * palette (설정 › 화면). Every theme fills the same names: --paper --sheet --ink
+ * --pencil --rule --sun --sat --marker, the seven colour pencils (spec §9.4:
+ * 일 pink, 월 lilac, 화 tangerine, 수 aqua, 목 green, 금 lemon, 토 sky), --on-index
+ * (dark ink on a pencil, both schemes) and the 회사 / 개인 marks --work / --personal.
+ * Each menu borrows one pencil as its index tab (할 일 lemon, 메모 pink, 자산 green,
+ * 설정 lilac); memos and accounts each get their own (src/ui/hues.ts).
  * --accent / --accent-soft / --accent-wash follow the current menu (bottom of this file).
  *
- * No blue-black anywhere: ink is warm graphite, the dark theme is charcoal.
+ * No blue-black anywhere: ink is warm graphite, dark themes are black.
  */
 
 :root {
-  color-scheme: light dark;
-
-  --paper: #f7f6f2; /* 종이: 바탕 */
-  --sheet: #ffffff; /* 흰 종이: 떠 있는 면(일정 이름표 등) */
-  --ink: #26231f; /* 흑연: 글자, 주요 버튼 */
-  --pencil: #6f6b64; /* 연필: 보조 글자, 꺼진 아이콘 */
-  --rule: #e5e2da; /* 줄: 구분선 */
-  --sun: #cc1f36; /* 일요일 빨강: 일요일·공휴일, 늦음, 오래된 잔액, 지금 시각 선 */
-  --sat: #2d5bd7; /* 토요일 파랑: 토요일, 링크 */
-  --marker: #ffe15a; /* 형광펜: 본문 속 오늘·지금 (글자 밑칠) */
-
-  /* Colour pencils (fills; content on them is always --on-index). */
-  --pink: #ffadc4; /* 일 · 메모 */
-  --lilac: #ccbfff; /* 월 · 설정 */
-  --tangerine: #ffbb6b; /* 화 · 회사 */
-  --aqua: #8edfd1; /* 수 */
-  --green: #b8e48a; /* 목 · 자산 · 개인 */
-  --lemon: #ffe15a; /* 금 · 할 일 */
-  --sky: #a6ceff; /* 토 */
-  --on-index: #26231f;
-
-  /* 회사 / 개인 marks: dots and edges too small for a pastel (fills use --tangerine / --green). */
-  --work: #d9650a;
-  --personal: #2a8f4f;
+  color-scheme: light;
 
   /* Derived (not palette colors): overlays and floating surfaces. */
   --scrim: rgb(28 26 23 / 0.4);
   --shadow-float: 0 6px 16px rgb(28 26 23 / 0.22);
 
-  --font-stack-num: var(--font-num), "Helvetica Neue", Arial, sans-serif;
   --font-stack-body: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
-    sans-serif;
-  --font-stack-head: var(--font-head), "Pretendard Variable", -apple-system, "Apple SD Gothic Neo", serif;
+    system-ui, sans-serif;
+  /* One family; headings and numbers only change weight and figures. */
+  --font-stack-num: var(--font-stack-body);
+  --font-stack-head: var(--font-stack-body);
 
   /* Type scale (16px body, ~1.2 steps). */
   --fs-xs: 12px;
@@ -103,50 +80,36 @@
   }
 }
 
-/* Dark: charcoal paper, light ink; sun / sat / marker keep their roles with adjusted lightness. */
+/* Dark scheme (the palette itself comes from src/ui/themes.css). */
+:root[data-scheme="dark"] {
+  color-scheme: dark;
+  --scrim: rgb(0 0 0 / 0.6);
+  --shadow-float: 0 6px 18px rgb(0 0 0 / 0.6);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-scheme]) {
     color-scheme: dark;
-
-    --paper: #1c1b19;
-    --sheet: #262522;
-    --ink: #f5f3ee;
-    --pencil: #a8a39a;
-    --rule: #393732;
-    --sun: #ff6f7c;
-    --sat: #8aa8ff;
-    --marker: rgb(242 208 75 / 0.42);
-
-    --pink: #f49db5;
-    --lilac: #b8a9f5;
-    --tangerine: #f5aa5c;
-    --aqua: #7ccfc1;
-    --green: #a6d67c;
-    --lemon: #f2d04b;
-    --sky: #92bdf4;
-    --work: #f5a04c;
-    --personal: #8fd06a;
-
-    --scrim: rgb(0 0 0 / 0.55);
-    --shadow-float: 0 6px 16px rgb(0 0 0 / 0.5);
+    --scrim: rgb(0 0 0 / 0.6);
+    --shadow-float: 0 6px 18px rgb(0 0 0 / 0.6);
   }
 }
 
 /* The current menu's index colour. :root:has() so sheets portalled to <body> follow it too. */
 :root {
-  --accent: var(--lemon);
+  --accent: var(--tab-todo);
 }
 
 :root:has([data-section="memo"]) {
-  --accent: var(--pink);
+  --accent: var(--tab-memo);
 }
 
 :root:has([data-section="assets"]) {
-  --accent: var(--green);
+  --accent: var(--tab-assets);
 }
 
 :root:has([data-section="settings"]) {
-  --accent: var(--lilac);
+  --accent: var(--tab-settings);
 }
 
 :root {
@@ -157,34 +120,48 @@
   /* How strongly a surface takes its pencil (a memo, an account, the day's leaf):
      color-mix(in srgb, var(--hue) var(--tint-mix), var(--sheet)). --hue is set where
      the surface is, so the mix has to be written there too. */
-  --tint-mix: 30%;
+  --tint-mix: 34%;
+  /* The 일력 leaf wears its day's pencil at full strength, in both schemes. */
+  --leaf-mix: 100%;
+  /* What a selected row or the line being written mixes its pencil into. */
+  --tint-base: var(--paper);
   /* A selected row, and the line being written in a memo. */
-  --select-mix: 34%;
-  --line-mix: 40%;
+  --select-mix: 38%;
+  --line-mix: 42%;
+}
+
+/* On black, a pencil mixed down turns muddy (yellow → olive, orange → brown, blue → navy).
+   Dark surfaces therefore stay faint, selected rows are plain lifted grey, and the full
+   colour shows on the leaf, tiles, edges and buttons instead. */
+:root[data-scheme="dark"] {
+  /* Lifted off black first: blue over black at low strength reads as navy. */
+  --tint-base: color-mix(in srgb, var(--ink) 13%, var(--paper));
+  --tint-mix: 14%;
+  --select-mix: 0%;
+  --line-mix: 0%;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* Pastel over charcoal turns muddy, so dark tints stay faint; the full
-       colour shows on edges and tiles instead. */
-    --tint-mix: 9%;
-    --select-mix: 17%;
-    --line-mix: 20%;
+  :root:not([data-scheme]) {
+    --tint-base: color-mix(in srgb, var(--ink) 13%, var(--paper));
+    --tint-mix: 14%;
+    --select-mix: 0%;
+    --line-mix: 0%;
   }
 }
 
-/* Headings in Hahmlet (for elements that are not styled in a module). */
+/* Headings (for elements that are not styled in a module). */
 .headline {
   font-family: var(--font-stack-head);
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
-/* Numbers: dates, times, money. Archivo with aligned digits. */
+/* Numbers: dates, times, money, in aligned (tabular) digits. */
 .num {
   font-family: var(--font-stack-num);
-  font-variant-numeric: tabular-nums lining-nums;
-  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 /* Visible only to screen readers (page headings the top bar already shows). */

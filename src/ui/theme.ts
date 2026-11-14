@@ -1,7 +1,7 @@
-// Mirrors --paper / --ink in src/ui/tokens.css for places that cannot read CSS
-// variables: <meta name="theme-color"> (viewport.themeColor) and the web manifest.
-// Keep in sync with tokens.css.
+// Mirrors the default theme's --paper / --ink (src/ui/themes.css, 색연필) for places
+// that cannot read CSS variables: <meta name="theme-color"> before the boot script
+// runs (viewport.themeColor) and the web manifest. Keep in sync with themes.css.
 export const THEME_COLORS = {
-  light: { paper: "#F7F6F2", ink: "#26231F" },
-  dark: { paper: "#1C1B19", ink: "#F5F3EE" },
+  light: { paper: "#FBFAF7", ink: "#1F1C19" },
+  dark: { paper: "#0E0E0D", ink: "#F5F4F0" },
 } as const;

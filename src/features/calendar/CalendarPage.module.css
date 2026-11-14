@@ -20,8 +20,6 @@
   font-family: var(--font-stack-num);
   font-size: 64px;
   font-weight: 800;
-  font-stretch: 62%;
-  font-variation-settings: "wdth" 62;
   line-height: 0.85;
   letter-spacing: -0.01em;
 }
@@ -30,7 +28,7 @@
   margin-left: 3px;
   font-family: var(--font-stack-head);
   font-size: 0.62em;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -143,7 +141,7 @@
   margin: 0;
   font-family: var(--font-stack-head);
   font-size: var(--fs-lg);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .holiday {

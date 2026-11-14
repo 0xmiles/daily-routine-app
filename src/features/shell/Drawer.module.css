@@ -60,7 +60,7 @@
 .brand {
   font-family: var(--font-stack-head);
   font-size: var(--fs-lg);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -125,7 +125,7 @@
 
 .item,
 .sub {
-  --tone: var(--lemon);
+  --tone: var(--tab-todo);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -139,17 +139,17 @@
 
 .item[data-tone="memo"],
 .sub[data-tone="memo"] {
-  --tone: var(--pink);
+  --tone: var(--tab-memo);
 }
 
 .item[data-tone="assets"],
 .sub[data-tone="assets"] {
-  --tone: var(--green);
+  --tone: var(--tab-assets);
 }
 
 .item[data-tone="settings"],
 .sub[data-tone="settings"] {
-  --tone: var(--lilac);
+  --tone: var(--tab-settings);
 }
 
 .item {
@@ -193,7 +193,7 @@
 
 .on,
 .on:hover {
-  background: color-mix(in srgb, var(--tone) var(--select-mix), var(--paper));
+  background: color-mix(in srgb, var(--tone) var(--select-mix), var(--tint-base));
   color: var(--ink);
   font-weight: 600;
 }
@@ -225,10 +225,8 @@
   background: var(--hover);
 }
 
-@media (prefers-color-scheme: dark) {
-  .tile {
-    --tile-mix: 82%;
-  }
+:global(:root[data-scheme="dark"]) .tile {
+  --tile-mix: 82%;
 }
 
 @keyframes fade-in {

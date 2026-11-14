@@ -1,0 +1,330 @@
+/*
+ * Colour themes (spec §9.5). Each theme sets the whole palette twice: light and dark.
+ * The theme and the scheme are attributes on <html>, set before the first paint by the
+ * boot script in src/app/layout.tsx from what 설정 › 화면 saved (src/ui/appearance.ts):
+ *
+ *   data-theme="crayon | neon | candy | tropical | sunset | pastel"
+ *   data-scheme="light | dark"   (resolved: 시스템 follows the OS and keeps following it)
+ *
+ * Selectors are attribute-only so any element can preview another theme
+ * (<span data-theme="neon" data-scheme="dark">), as the theme cards in 설정 do.
+ * A theme's dark block is more specific than every light block, so it always wins.
+ *
+ * The seven pencils keep their names in every theme (일 pink … 토 sky, see
+ * src/ui/hues.ts); a theme changes how loud they are and what paper they sit on.
+ * Content on a pencil is always --on-index. Never navy: dark themes are black.
+ */
+
+/* 색연필 (기본) */
+:root,
+[data-theme="crayon"] {
+  --paper: #fbfaf7; /* 바탕 */
+  --sheet: #ffffff; /* 떠 있는 면 */
+  --ink: #1f1c19; /* 글자 */
+  --pencil: #69645d; /* 보조 글자 */
+  --rule: #e8e5de; /* 구분선 */
+  --sun: #b50c28; /* 일요일·공휴일·늦음 */
+  --sat: #1a56d6; /* 토요일·링크 */
+  --marker: #ffe14d; /* 형광펜 */
+  --pink: #ff7aa8; /* 일 · 메모 */
+  --lilac: #b598ff; /* 월 · 설정 */
+  --tangerine: #ff9c3d; /* 화 · 회사 */
+  --aqua: #3fd4bf; /* 수 */
+  --green: #8fd94e; /* 목 · 자산 · 개인 */
+  --lemon: #ffd83d; /* 금 · 할 일 */
+  --sky: #6bb6ff; /* 토 */
+  --on-index: #1f1c19; /* 색 위 글자 */
+  --work: #d65c00; /* 회사 표시 */
+  --personal: #1c9448; /* 개인 표시 */
+  /* Menu index tabs (할 일, 메모, 자산, 설정 — 자산 is off for now); they follow the scheme through the pencils. */
+  --tab-todo: var(--lemon);
+  --tab-memo: var(--pink);
+  --tab-assets: var(--green);
+  --tab-settings: var(--lilac);
+}
+
+[data-scheme="dark"],
+[data-theme="crayon"][data-scheme="dark"] {
+  --paper: #0e0e0d; /* 바탕 */
+  --sheet: #1a1a18; /* 떠 있는 면 */
+  --ink: #f5f4f0; /* 글자 */
+  --pencil: #a6a29a; /* 보조 글자 */
+  --rule: #2e2d2a; /* 구분선 */
+  --sun: #ff6b7a; /* 일요일·공휴일·늦음 */
+  --sat: #8ab4ff; /* 토요일·링크 */
+  --marker: rgb(255 216 61 / 0.42); /* 형광펜 */
+  --pink: #ff8ab3; /* 일 · 메모 */
+  --lilac: #bea4ff; /* 월 · 설정 */
+  --tangerine: #ffa552; /* 화 · 회사 */
+  --aqua: #4fdcc6; /* 수 */
+  --green: #9ae05c; /* 목 · 자산 · 개인 */
+  --lemon: #ffdd52; /* 금 · 할 일 */
+  --sky: #7cc0ff; /* 토 */
+  --on-index: #1f1c19; /* 색 위 글자 */
+  --work: #ffa04d; /* 회사 표시 */
+  --personal: #7fdc6a; /* 개인 표시 */
+}
+
+/* 네온 */
+[data-theme="neon"] {
+  --paper: #fafafa; /* 바탕 */
+  --sheet: #ffffff; /* 떠 있는 면 */
+  --ink: #111111; /* 글자 */
+  --pencil: #5f5f5f; /* 보조 글자 */
+  --rule: #e5e5e5; /* 구분선 */
+  --sun: #ad001d; /* 일요일·공휴일·늦음 */
+  --sat: #0044cc; /* 토요일·링크 */
+  --marker: #fff03a; /* 형광펜 */
+  --pink: #ff3d8f; /* 일 · 메모 */
+  --lilac: #a07aff; /* 월 · 설정 */
+  --tangerine: #ff7a1a; /* 화 · 회사 */
+  --aqua: #00d8c8; /* 수 */
+  --green: #7ee000; /* 목 · 자산 · 개인 */
+  --lemon: #ffe500; /* 금 · 할 일 */
+  --sky: #2f9cff; /* 토 */
+  --on-index: #111111; /* 색 위 글자 */
+  --work: #e05500; /* 회사 표시 */
+  --personal: #00a142; /* 개인 표시 */
+  /* Menu index tabs (할 일, 메모, 자산, 설정 — 자산 is off for now); they follow the scheme through the pencils. */
+  --tab-todo: var(--pink);
+  --tab-memo: var(--lemon);
+  --tab-assets: var(--green);
+  --tab-settings: var(--lilac);
+}
+
+[data-theme="neon"][data-scheme="dark"] {
+  --paper: #000000; /* 바탕 */
+  --sheet: #121212; /* 떠 있는 면 */
+  --ink: #ffffff; /* 글자 */
+  --pencil: #a8a8a8; /* 보조 글자 */
+  --rule: #2a2a2a; /* 구분선 */
+  --sun: #ff5470; /* 일요일·공휴일·늦음 */
+  --sat: #6aaaff; /* 토요일·링크 */
+  --marker: rgb(255 240 31 / 0.45); /* 형광펜 */
+  --pink: #ff4d9a; /* 일 · 메모 */
+  --lilac: #ad85ff; /* 월 · 설정 */
+  --tangerine: #ff8a2e; /* 화 · 회사 */
+  --aqua: #10e6d6; /* 수 */
+  --green: #92f21a; /* 목 · 자산 · 개인 */
+  --lemon: #fff01f; /* 금 · 할 일 */
+  --sky: #45a8ff; /* 토 */
+  --on-index: #111111; /* 색 위 글자 */
+  --work: #ff8a2e; /* 회사 표시 */
+  --personal: #5ff07a; /* 개인 표시 */
+}
+
+/* 캔디 */
+[data-theme="candy"] {
+  --paper: #ffecf4; /* 바탕 */
+  --sheet: #ffffff; /* 떠 있는 면 */
+  --ink: #2a1a24; /* 글자 */
+  --pencil: #735c69; /* 보조 글자 */
+  --rule: #f5d5e3; /* 구분선 */
+  --sun: #b80c3e; /* 일요일·공휴일·늦음 */
+  --sat: #4a46d8; /* 토요일·링크 */
+  --marker: #ffe46b; /* 형광펜 */
+  --pink: #ff86bd; /* 일 · 메모 */
+  --lilac: #c79bff; /* 월 · 설정 */
+  --tangerine: #ffa87a; /* 화 · 회사 */
+  --aqua: #5fe3c8; /* 수 */
+  --green: #b8ec6a; /* 목 · 자산 · 개인 */
+  --lemon: #ffe470; /* 금 · 할 일 */
+  --sky: #8ccfff; /* 토 */
+  --on-index: #2a1a24; /* 색 위 글자 */
+  --work: #d95a1e; /* 회사 표시 */
+  --personal: #25965a; /* 개인 표시 */
+  /* Menu index tabs (할 일, 메모, 자산, 설정 — 자산 is off for now); they follow the scheme through the pencils. */
+  --tab-todo: var(--pink);
+  --tab-memo: var(--lilac);
+  --tab-assets: var(--aqua);
+  --tab-settings: var(--tangerine);
+}
+
+[data-theme="candy"][data-scheme="dark"] {
+  --paper: #1b0c17; /* 바탕 */
+  --sheet: #291522; /* 떠 있는 면 */
+  --ink: #fbeff5; /* 글자 */
+  --pencil: #b99eae; /* 보조 글자 */
+  --rule: #3d2335; /* 구분선 */
+  --sun: #ff6f96; /* 일요일·공휴일·늦음 */
+  --sat: #aab4ff; /* 토요일·링크 */
+  --marker: rgb(255 228 112 / 0.4); /* 형광펜 */
+  --pink: #ff8fc3; /* 일 · 메모 */
+  --lilac: #cfa6ff; /* 월 · 설정 */
+  --tangerine: #ffb08a; /* 화 · 회사 */
+  --aqua: #6ce8cf; /* 수 */
+  --green: #c0ef7a; /* 목 · 자산 · 개인 */
+  --lemon: #ffe67a; /* 금 · 할 일 */
+  --sky: #9ad5ff; /* 토 */
+  --on-index: #2a1a24; /* 색 위 글자 */
+  --work: #ffa37a; /* 회사 표시 */
+  --personal: #8ee6a0; /* 개인 표시 */
+}
+
+/* 트로피컬 */
+[data-theme="tropical"] {
+  --paper: #e9f7ee; /* 바탕 */
+  --sheet: #ffffff; /* 떠 있는 면 */
+  --ink: #13201a; /* 글자 */
+  --pencil: #56675d; /* 보조 글자 */
+  --rule: #cfe6d8; /* 구분선 */
+  --sun: #a90e2f; /* 일요일·공휴일·늦음 */
+  --sat: #0755b0; /* 토요일·링크 */
+  --marker: #ffd84a; /* 형광펜 */
+  --pink: #ff5c8a; /* 일 · 메모 */
+  --lilac: #c26eff; /* 월 · 설정 */
+  --tangerine: #ff9a1f; /* 화 · 회사 */
+  --aqua: #14ccbb; /* 수 */
+  --green: #43cf6b; /* 목 · 자산 · 개인 */
+  --lemon: #ffd21f; /* 금 · 할 일 */
+  --sky: #33aaf5; /* 토 */
+  --on-index: #13201a; /* 색 위 글자 */
+  --work: #d05a00; /* 회사 표시 */
+  --personal: #0f8a40; /* 개인 표시 */
+  /* Menu index tabs (할 일, 메모, 자산, 설정 — 자산 is off for now); they follow the scheme through the pencils. */
+  --tab-todo: var(--aqua);
+  --tab-memo: var(--pink);
+  --tab-assets: var(--green);
+  --tab-settings: var(--tangerine);
+}
+
+[data-theme="tropical"][data-scheme="dark"] {
+  --paper: #04160e; /* 바탕 */
+  --sheet: #0b261a; /* 떠 있는 면 */
+  --ink: #effaf3; /* 글자 */
+  --pencil: #a0b8aa; /* 보조 글자 */
+  --rule: #1c3a2b; /* 구분선 */
+  --sun: #ff6c80; /* 일요일·공휴일·늦음 */
+  --sat: #79bdff; /* 토요일·링크 */
+  --marker: rgb(255 216 74 / 0.4); /* 형광펜 */
+  --pink: #ff6b95; /* 일 · 메모 */
+  --lilac: #c97cff; /* 월 · 설정 */
+  --tangerine: #ffa53a; /* 화 · 회사 */
+  --aqua: #22d9c7; /* 수 */
+  --green: #55dc7b; /* 목 · 자산 · 개인 */
+  --lemon: #ffd93a; /* 금 · 할 일 */
+  --sky: #48b4f7; /* 토 */
+  --on-index: #13201a; /* 색 위 글자 */
+  --work: #ffa53a; /* 회사 표시 */
+  --personal: #6fe28f; /* 개인 표시 */
+}
+
+/* 노을 */
+[data-theme="sunset"] {
+  --paper: #ffede2; /* 바탕 */
+  --sheet: #ffffff; /* 떠 있는 면 */
+  --ink: #2a1712; /* 글자 */
+  --pencil: #765c52; /* 보조 글자 */
+  --rule: #f3d6c6; /* 구분선 */
+  --sun: #b00c26; /* 일요일·공휴일·늦음 */
+  --sat: #4a3fd0; /* 토요일·링크 */
+  --marker: #ffd166; /* 형광펜 */
+  --pink: #ff6f91; /* 일 · 메모 */
+  --lilac: #c77dff; /* 월 · 설정 */
+  --tangerine: #ff8c42; /* 화 · 회사 */
+  --aqua: #2ec4b6; /* 수 */
+  --green: #a7d65a; /* 목 · 자산 · 개인 */
+  --lemon: #ffc93c; /* 금 · 할 일 */
+  --sky: #8ea2ff; /* 토 */
+  --on-index: #2a1712; /* 색 위 글자 */
+  --work: #d1450c; /* 회사 표시 */
+  --personal: #3a8a35; /* 개인 표시 */
+  /* Menu index tabs (할 일, 메모, 자산, 설정 — 자산 is off for now); they follow the scheme through the pencils. */
+  --tab-todo: var(--tangerine);
+  --tab-memo: var(--pink);
+  --tab-assets: var(--lemon);
+  --tab-settings: var(--lilac);
+}
+
+[data-theme="sunset"][data-scheme="dark"] {
+  --paper: #1c0d07; /* 바탕 */
+  --sheet: #2c1710; /* 떠 있는 면 */
+  --ink: #fff1ea; /* 글자 */
+  --pencil: #bd9d90; /* 보조 글자 */
+  --rule: #43281d; /* 구분선 */
+  --sun: #ff6b6b; /* 일요일·공휴일·늦음 */
+  --sat: #a99fff; /* 토요일·링크 */
+  --marker: rgb(255 209 102 / 0.4); /* 형광펜 */
+  --pink: #ff7f9e; /* 일 · 메모 */
+  --lilac: #cf8cff; /* 월 · 설정 */
+  --tangerine: #ff9a57; /* 화 · 회사 */
+  --aqua: #3fd0c2; /* 수 */
+  --green: #b3df6a; /* 목 · 자산 · 개인 */
+  --lemon: #ffd25a; /* 금 · 할 일 */
+  --sky: #9caeff; /* 토 */
+  --on-index: #2a1712; /* 색 위 글자 */
+  --work: #ff9a57; /* 회사 표시 */
+  --personal: #9bdc74; /* 개인 표시 */
+}
+
+/* 파스텔 */
+[data-theme="pastel"] {
+  --paper: #f7f6f2; /* 바탕 */
+  --sheet: #ffffff; /* 떠 있는 면 */
+  --ink: #26231f; /* 글자 */
+  --pencil: #6f6b64; /* 보조 글자 */
+  --rule: #e5e2da; /* 구분선 */
+  --sun: #cc1f36; /* 일요일·공휴일·늦음 */
+  --sat: #2d5bd7; /* 토요일·링크 */
+  --marker: #ffe15a; /* 형광펜 */
+  --pink: #ffadc4; /* 일 · 메모 */
+  --lilac: #ccbfff; /* 월 · 설정 */
+  --tangerine: #ffbb6b; /* 화 · 회사 */
+  --aqua: #8edfd1; /* 수 */
+  --green: #b8e48a; /* 목 · 자산 · 개인 */
+  --lemon: #ffe15a; /* 금 · 할 일 */
+  --sky: #a6ceff; /* 토 */
+  --on-index: #26231f; /* 색 위 글자 */
+  --work: #d9650a; /* 회사 표시 */
+  --personal: #2a8f4f; /* 개인 표시 */
+  /* Menu index tabs (할 일, 메모, 자산, 설정 — 자산 is off for now); they follow the scheme through the pencils. */
+  --tab-todo: var(--lemon);
+  --tab-memo: var(--pink);
+  --tab-assets: var(--green);
+  --tab-settings: var(--lilac);
+}
+
+[data-theme="pastel"][data-scheme="dark"] {
+  --paper: #1c1b19; /* 바탕 */
+  --sheet: #262522; /* 떠 있는 면 */
+  --ink: #f5f3ee; /* 글자 */
+  --pencil: #a8a39a; /* 보조 글자 */
+  --rule: #393732; /* 구분선 */
+  --sun: #ff8590; /* 일요일·공휴일·늦음 */
+  --sat: #8aa8ff; /* 토요일·링크 */
+  --marker: rgb(242 208 75 / 0.42); /* 형광펜 */
+  --pink: #f49db5; /* 일 · 메모 */
+  --lilac: #b8a9f5; /* 월 · 설정 */
+  --tangerine: #f5aa5c; /* 화 · 회사 */
+  --aqua: #7ccfc1; /* 수 */
+  --green: #a6d67c; /* 목 · 자산 · 개인 */
+  --lemon: #f2d04b; /* 금 · 할 일 */
+  --sky: #92bdf4; /* 토 */
+  --on-index: #26231f; /* 색 위 글자 */
+  --work: #f5a04c; /* 회사 표시 */
+  --personal: #8fd06a; /* 개인 표시 */
+}
+
+/* Before the boot script runs (or without JS): follow the OS with the default theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme]) {
+    --paper: #0e0e0d; /* 바탕 */
+    --sheet: #1a1a18; /* 떠 있는 면 */
+    --ink: #f5f4f0; /* 글자 */
+    --pencil: #a6a29a; /* 보조 글자 */
+    --rule: #2e2d2a; /* 구분선 */
+    --sun: #ff6b7a; /* 일요일·공휴일·늦음 */
+    --sat: #8ab4ff; /* 토요일·링크 */
+    --marker: rgb(255 216 61 / 0.42); /* 형광펜 */
+    --pink: #ff8ab3; /* 일 · 메모 */
+    --lilac: #bea4ff; /* 월 · 설정 */
+    --tangerine: #ffa552; /* 화 · 회사 */
+    --aqua: #4fdcc6; /* 수 */
+    --green: #9ae05c; /* 목 · 자산 · 개인 */
+    --lemon: #ffdd52; /* 금 · 할 일 */
+    --sky: #7cc0ff; /* 토 */
+    --on-index: #1f1c19; /* 색 위 글자 */
+    --work: #ffa04d; /* 회사 표시 */
+    --personal: #7fdc6a; /* 개인 표시 */
+  }
+}

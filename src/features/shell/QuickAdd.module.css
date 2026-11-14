@@ -16,7 +16,7 @@
 
 /* Each kind wears the index colour of the menu it lands in. */
 .kind {
-  --tone: var(--lemon);
+  --tone: var(--tab-todo);
   min-width: 64px;
   min-height: 36px;
   padding: 4px 16px;
@@ -34,7 +34,7 @@
 }
 
 .kind[data-kind="memo"] {
-  --tone: var(--pink);
+  --tone: var(--tab-memo);
 }
 
 .kindOn,

@@ -61,7 +61,7 @@
 .on::before,
 .on:hover::before,
 .on:active::before {
-  background: var(--lemon);
+  background: var(--tab-todo);
 }
 
 @media (min-width: 900px) {

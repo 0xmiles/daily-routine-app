@@ -1,7 +1,10 @@
-/* The one loud thing on the screen is the big date (spec §5.7 rule 1). */
+/* The one loud thing on the screen is the big date (spec §5.7 rule 1), on a leaf
+   in the day's full colour. Everything on the leaf is --on-index; coloured words
+   (일요일, 토요일, 공휴일, 늦은 할 일) sit on small paper stickers so they stay legible. */
 
 .leaf {
   padding: 4px 12px 14px;
+  color: var(--on-index);
 }
 
 .ym {
@@ -13,7 +16,7 @@
 }
 
 .year {
-  color: color-mix(in srgb, var(--ink) 72%, var(--leaf));
+  font-weight: 500;
 }
 
 .right {
@@ -23,18 +26,30 @@
   min-width: 0;
 }
 
-.weekday {
-  font-family: var(--font-stack-head);
-  font-size: var(--fs-base);
-  font-weight: 800;
-}
-
-.holiday {
-  font-size: 12.5px;
-  font-weight: 500;
+/* A paper sticker on the leaf; its text takes the day's tone. */
+.pill {
+  display: inline-block;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--sheet);
+  color: var(--ink);
+  line-height: 1.35;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.weekday {
+  font-family: var(--font-stack-head);
+  font-size: var(--fs-md);
+  font-weight: 700;
+}
+
+.holiday {
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
 .numeral {
@@ -42,35 +57,33 @@
   font-family: var(--font-stack-num);
   font-size: 122px;
   font-weight: 800;
-  font-stretch: 62%;
-  font-variation-settings: "wdth" 62;
-  font-variant-numeric: lining-nums;
-  line-height: 0.78;
-  letter-spacing: -0.02em;
+  font-variant-numeric: proportional-nums;
+  line-height: 0.8;
+  letter-spacing: -0.06em;
 }
 
-.ink {
+/* Tone classes colour only the stickers; the numeral stays --on-index on the coloured leaf. */
+.pill.ink {
   color: var(--ink);
 }
 
-.sat {
+.pill.sat {
   color: var(--sat);
 }
 
-.sun {
+.pill.sun {
   color: var(--sun);
 }
 
 .sum {
   margin: 0;
   font-size: 13.5px;
+  font-weight: 500;
   line-height: 1.6;
-  color: color-mix(in srgb, var(--ink) 72%, var(--leaf));
 }
 
 .sum b {
-  color: var(--ink);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .loading {
@@ -79,9 +92,9 @@
 
 .late {
   display: none;
-  margin: 0;
+  margin: 8px 0 0;
   font-size: 13px;
-  line-height: 1.6;
+  font-weight: 600;
   color: var(--sun);
 }
 
@@ -131,7 +144,7 @@
   }
 
   .late {
-    display: block;
+    display: inline-block;
   }
 }
 

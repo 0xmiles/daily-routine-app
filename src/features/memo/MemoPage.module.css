@@ -174,7 +174,7 @@
 
 /* Each memo keeps its own pencil (--hue, from its key); the open one is tinted with it. */
 .file[aria-current="page"] {
-  background: color-mix(in srgb, var(--hue) var(--select-mix), var(--paper));
+  background: color-mix(in srgb, var(--hue) var(--select-mix), var(--tint-base));
 }
 
 .file[aria-current="page"]::before,
@@ -255,7 +255,7 @@
   height: 56px;
   margin-bottom: 10px;
   border-radius: 16px;
-  background: var(--pink);
+  background: var(--tab-memo);
   color: var(--on-index);
   transform: rotate(-4deg);
 }
@@ -264,7 +264,7 @@
   margin: 0;
   font-family: var(--font-stack-head);
   font-size: var(--fs-lg);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--ink);
 }
 

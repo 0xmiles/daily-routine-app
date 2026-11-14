@@ -151,16 +151,12 @@
 .date {
   padding-left: 2px !important;
   white-space: nowrap;
-  font-stretch: 78%;
-  font-variation-settings: "wdth" 78;
 }
 
 .amount {
   text-align: right;
   white-space: nowrap;
   font-size: 12.5px;
-  font-stretch: 78%;
-  font-variation-settings: "wdth" 78;
 }
 
 .latest {

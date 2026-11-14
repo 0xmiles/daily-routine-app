@@ -1,6 +1,6 @@
 .page {
   /* --hue is the day's pencil (set inline from the weekday): every leaf in the pad is a different colour. */
-  --leaf: color-mix(in srgb, var(--hue) var(--tint-mix), var(--sheet));
+  --leaf: color-mix(in srgb, var(--hue) var(--leaf-mix), var(--sheet));
   display: flex;
   flex-direction: column;
   padding-top: 10px;
@@ -41,13 +41,12 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--pencil);
+  color: var(--on-index);
   cursor: pointer;
 }
 
 .navButton:hover {
-  color: var(--ink);
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  background: color-mix(in srgb, var(--on-index) 10%, transparent);
 }
 
 .backToday {
@@ -56,20 +55,27 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--sat);
+  color: var(--on-index);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
 }
 
 .backToday:hover {
-  text-decoration: underline;
+  background: color-mix(in srgb, var(--on-index) 10%, transparent);
 }
 
-.navButton:focus-visible,
-.backToday:focus-visible,
 .addTodo:focus-visible {
   outline: 2px solid var(--sat);
+  outline-offset: 2px;
+}
+
+/* On the coloured leaf the ring is the leaf's own ink. */
+.navButton:focus-visible,
+.backToday:focus-visible {
+  outline: 2px solid var(--on-index);
   outline-offset: 2px;
 }
 
@@ -89,7 +95,7 @@
   top: 0;
   left: 14px;
   right: 14px;
-  border-top: 1.6px dashed color-mix(in srgb, var(--ink) 30%, var(--leaf));
+  border-top: 1.6px dashed color-mix(in srgb, var(--on-index) 35%, var(--leaf));
 }
 
 .perf::before,
@@ -125,7 +131,7 @@
   margin: 0;
   font-family: var(--font-stack-head);
   font-size: var(--fs-lg);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
@@ -227,7 +233,7 @@
     margin: 0;
     padding-top: 0;
     border-radius: 0;
-    border-right: 1.6px dashed color-mix(in srgb, var(--ink) 26%, var(--leaf));
+    border-right: 1.6px dashed color-mix(in srgb, var(--on-index) 30%, var(--leaf));
   }
 
   .dayNav {

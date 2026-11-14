@@ -44,8 +44,8 @@ export function DateLeaf({ date, counts, holiday = null, enter = null, className
           {month}월
         </span>
         <span className={styles.right}>
-          {holiday && <span className={cx(styles.holiday, toneClass)}>{holiday}</span>}
-          <span className={cx(styles.weekday, toneClass)}>{WEEKDAY_NAMES[weekdayOf(date)]}</span>
+          {holiday && <span className={cx(styles.pill, styles.holiday, toneClass)}>{holiday}</span>}
+          <span className={cx(styles.pill, styles.weekday, toneClass)}>{WEEKDAY_NAMES[weekdayOf(date)]}</span>
         </span>
       </div>
       <div className={cx(styles.numeral, toneClass)} aria-hidden="true">
@@ -89,7 +89,7 @@ function Summary({ counts }: { counts: LeafCounts | null }) {
         </span>
       </p>
       {late > 0 && (
-        <p className={styles.late}>
+        <p className={cx(styles.pill, styles.late)}>
           늦은 할 일 <span className="num">{late}</span>개
         </p>
       )}
