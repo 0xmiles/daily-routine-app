@@ -5,9 +5,11 @@ import {
   APPEARANCE_EVENT,
   MODES,
   THEMES,
+  THEME_GROUPS,
   applyAppearance,
   currentAppearance,
   type Mode,
+  type Theme,
   type ThemeId,
 } from "@/ui/appearance";
 import { HUES, hueStyle } from "@/ui/hues";
@@ -73,37 +75,74 @@ export function AppearanceSettings() {
         <p id={themeLabel} className={styles.label}>
           테마
         </p>
-        <div role="radiogroup" aria-labelledby={themeLabel} className={styles.themes}>
-          {THEMES.map((t) => {
-            const on = t.id === theme;
-            return (
-              // Each card renders in its own theme (themes.css selectors are attribute-only).
-              <label key={t.id} className={cx(styles.card, on && styles.cardOn)} data-theme={t.id} data-scheme={scheme}>
-                <input
-                  type="radio"
-                  className={styles.radio}
-                  name={themeName}
-                  value={t.id}
-                  checked={on}
-                  onChange={() => applyAppearance(t.id, mode)}
-                />
-                <span className={styles.pencils} aria-hidden="true">
-                  {HUES.map((hue) => (
-                    <i key={hue} className={styles.pencil} style={hueStyle(hue)} />
-                  ))}
+        {/* One radiogroup (one radio name) split into 기본 and 개발자, so arrow keys run through all of them. */}
+        <div role="radiogroup" aria-labelledby={themeLabel} className={styles.groups}>
+          {THEME_GROUPS.map((group) => (
+            <div key={group.id} role="group" className={styles.group} aria-labelledby={`${themeLabel}-${group.id}`}>
+              <p className={styles.groupHead}>
+                <span id={`${themeLabel}-${group.id}`} className={styles.groupName}>
+                  {group.name}
                 </span>
-                <span className={styles.name}>
-                  {t.name}
-                  {on && <CheckIcon />}
-                </span>
-                <span className={styles.note}>{t.note}</span>
-              </label>
-            );
-          })}
+                <span className={styles.groupNote}>{group.note}</span>
+              </p>
+              <div className={cx(styles.themes, group.id === "dev" && styles.devThemes)}>
+                {THEMES.filter((t) => t.group === group.id).map((t) => (
+                  <ThemeCard
+                    key={t.id}
+                    theme={t}
+                    on={t.id === theme}
+                    scheme={scheme}
+                    name={themeName}
+                    onPick={() => applyAppearance(t.id, mode)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
         <p className={styles.desc}>테마와 모드는 이 기기에만 저장돼요.</p>
       </div>
     </div>
+  );
+}
+
+function ThemeCard({
+  theme: t,
+  on,
+  scheme,
+  name,
+  onPick,
+}: {
+  theme: Theme;
+  on: boolean;
+  scheme: "light" | "dark";
+  name: string;
+  onPick: () => void;
+}) {
+  return (
+    // Each card renders in its own theme (themes.css selectors are attribute-only).
+    <label className={cx(styles.card, on && styles.cardOn)} data-theme={t.id} data-scheme={scheme}>
+      <input type="radio" className={styles.radio} name={name} value={t.id} checked={on} onChange={onPick} />
+      <span className={styles.pencils} aria-hidden="true">
+        {HUES.map((hue) => (
+          <i key={hue} className={styles.pencil} style={hueStyle(hue)} />
+        ))}
+      </span>
+      <span className={styles.name}>
+        {t.name}
+        {on && <CheckIcon />}
+      </span>
+      {t.note ? (
+        <span className={styles.note}>{t.note}</span>
+      ) : (
+        // 개발자 themes show a line of code in the theme's own text colours instead of a note.
+        <code className={styles.code} aria-hidden="true">
+          <span className={styles.kw}>let</span> 오늘 <span className={styles.op}>=</span>{" "}
+          <span className={styles.str}>&quot;할 일&quot;</span>
+          <span className={styles.op}>;</span>
+        </code>
+      )}
+    </label>
   );
 }
 

@@ -1,7 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { THEME_BOOT_SCRIPT, THEME_IDS, resolveScheme } from "@/ui/appearance";
+import { THEMES, THEME_BOOT_SCRIPT, THEME_IDS, resolveScheme } from "@/ui/appearance";
 import { AppearanceSettings } from "./AppearanceSettings";
 
 const html = document.documentElement;
@@ -88,6 +90,32 @@ describe("AppearanceSettings", () => {
     expect(JSON.parse(localStorage.getItem("daily:mode") ?? "null")).toBe("dark");
     // The theme stays when only the mode changes.
     expect(html.getAttribute("data-theme")).toBe("tropical");
+  });
+
+  it("groups the themes into 기본 and 개발자, every one with a light and a dark palette", () => {
+    expect(THEMES.filter((t) => t.group === "basic")).toHaveLength(6);
+    expect(THEMES.filter((t) => t.group === "dev").length).toBeGreaterThanOrEqual(18);
+    expect(new Set(THEME_IDS).size).toBe(THEME_IDS.length);
+
+    const css = readFileSync(resolve(__dirname, "../../ui/themes.css"), "utf8");
+    for (const id of THEME_IDS) {
+      expect(css, id).toMatch(new RegExp(`\\[data-theme="${id}"\\] \\{[^}]*--paper:`));
+      expect(css, id).toMatch(new RegExp(`\\[data-theme="${id}"\\]\\[data-scheme="dark"\\] \\{[^}]*--paper:`));
+    }
+
+    runBootScript();
+    render(<AppearanceSettings />);
+    const dev = screen.getByRole("group", { name: "개발자" });
+    expect(within(dev).getAllByRole("radio")).toHaveLength(THEMES.filter((t) => t.group === "dev").length);
+    expect(within(screen.getByRole("group", { name: "기본" })).getAllByRole("radio")).toHaveLength(6);
+  });
+
+  it("picks a developer theme like any other", async () => {
+    runBootScript();
+    render(<AppearanceSettings />);
+    await userEvent.click(screen.getByRole("radio", { name: /One Dark/ }));
+    expect(html.getAttribute("data-theme")).toBe("onedark");
+    expect(JSON.parse(localStorage.getItem("daily:theme") ?? "null")).toBe("onedark");
   });
 
   it("paints each theme card in its own theme and the current scheme", async () => {

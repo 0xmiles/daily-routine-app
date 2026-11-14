@@ -8,19 +8,47 @@
 // THEME_BOOT_SCRIPT sets them in <head> before the first paint and keeps a
 // 시스템 page following the OS; applyAppearance() changes them later.
 
-export const THEMES = [
-  { id: "crayon", name: "색연필", note: "또렷한 일곱 색, 기본" },
-  { id: "neon", name: "네온", note: "형광처럼 쨍한 색" },
-  { id: "candy", name: "캔디", note: "분홍빛 종이에 달콤한 색" },
-  { id: "tropical", name: "트로피컬", note: "초록빛 종이에 열대 과일 색" },
-  { id: "sunset", name: "노을", note: "살구빛 종이에 따뜻한 색" },
-  { id: "pastel", name: "파스텔", note: "흐린 색연필, 차분하게" },
-] as const;
+export type ThemeGroup = "basic" | "dev";
 
-export type ThemeId = (typeof THEMES)[number]["id"];
+export const THEME_GROUPS: ReadonlyArray<{ id: ThemeGroup; name: string; note: string }> = [
+  { id: "basic", name: "기본", note: "색연필 일곱 색을 종이마다 다르게" },
+  { id: "dev", name: "개발자", note: "에디터와 터미널에서 쓰던 색 구성표 그대로" },
+];
+
+const THEME_LIST = [
+  { id: "crayon", name: "색연필", group: "basic", note: "또렷한 일곱 색, 기본" },
+  { id: "neon", name: "네온", group: "basic", note: "형광처럼 쨍한 색" },
+  { id: "candy", name: "캔디", group: "basic", note: "분홍빛 종이에 달콤한 색" },
+  { id: "tropical", name: "트로피컬", group: "basic", note: "초록빛 종이에 열대 과일 색" },
+  { id: "sunset", name: "노을", group: "basic", note: "살구빛 종이에 따뜻한 색" },
+  { id: "pastel", name: "파스텔", group: "basic", note: "흐린 색연필, 차분하게" },
+  // 개발자: colours from iTerm2-Color-Schemes and each editor's accents (src/ui/themes.css).
+  { id: "onedark", name: "One Dark", group: "dev" },
+  { id: "dracula", name: "Dracula", group: "dev" },
+  { id: "monokai", name: "Monokai Pro", group: "dev" },
+  { id: "gruvbox", name: "Gruvbox", group: "dev" },
+  { id: "catppuccin", name: "Catppuccin", group: "dev" },
+  { id: "solarized", name: "Solarized", group: "dev" },
+  { id: "nord", name: "Nord", group: "dev" },
+  { id: "github", name: "GitHub", group: "dev" },
+  { id: "tokyonight", name: "Tokyo Night", group: "dev" },
+  { id: "ayu", name: "Ayu", group: "dev" },
+  { id: "everforest", name: "Everforest", group: "dev" },
+  { id: "kanagawa", name: "Kanagawa", group: "dev" },
+  { id: "synthwave", name: "Synthwave", group: "dev" },
+  { id: "material", name: "Material", group: "dev" },
+  { id: "rosepine", name: "Rosé Pine", group: "dev" },
+  { id: "darcula", name: "Darcula", group: "dev" },
+  { id: "xcode", name: "Xcode", group: "dev" },
+  { id: "tomorrow", name: "Tomorrow", group: "dev" },
+] as const satisfies ReadonlyArray<{ id: string; name: string; group: ThemeGroup; note?: string }>;
+
+export type ThemeId = (typeof THEME_LIST)[number]["id"];
+export type Theme = { id: ThemeId; name: string; group: ThemeGroup; note?: string };
 export type Mode = "system" | "light" | "dark";
 export type Scheme = "light" | "dark";
 
+export const THEMES: readonly Theme[] = THEME_LIST;
 export const THEME_IDS: readonly ThemeId[] = THEMES.map((t) => t.id);
 export const DEFAULT_THEME: ThemeId = "crayon";
 
