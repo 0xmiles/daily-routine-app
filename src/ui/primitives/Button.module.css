@@ -41,6 +41,20 @@
   opacity: 0.76;
 }
 
+.color {
+  background: var(--hue);
+  color: var(--on-index);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-index) 14%, transparent);
+}
+
+.color:not(:disabled):hover {
+  background: color-mix(in srgb, var(--hue) 88%, var(--on-index));
+}
+
+.color:not(:disabled):active {
+  background: color-mix(in srgb, var(--hue) 78%, var(--on-index));
+}
+
 .outline {
   background: transparent;
   color: var(--ink);

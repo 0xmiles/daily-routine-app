@@ -10,13 +10,14 @@
   white-space: nowrap;
 }
 
+/* 회사 = tangerine fill, 개인 = green outline (the shape tells them apart, not only the colour). */
 .work {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--tangerine);
+  color: var(--on-index);
 }
 
 .personal {
-  background: transparent;
+  background: color-mix(in srgb, var(--green) 30%, transparent);
   color: var(--ink);
-  box-shadow: inset 0 0 0 1.2px var(--ink);
+  box-shadow: inset 0 0 0 1.2px var(--personal);
 }

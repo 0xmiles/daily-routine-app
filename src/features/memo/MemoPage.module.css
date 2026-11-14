@@ -172,8 +172,9 @@
   outline-offset: -2px;
 }
 
+/* Each memo keeps its own pencil (--hue, from its key); the open one is tinted with it. */
 .file[aria-current="page"] {
-  background: color-mix(in srgb, var(--pink) 30%, var(--paper));
+  background: color-mix(in srgb, var(--hue) var(--select-mix), var(--paper));
 }
 
 .file[aria-current="page"]::before,
@@ -197,13 +198,8 @@
   width: 22px;
   height: 22px;
   border-radius: 7px;
-  background: var(--pink);
+  background: var(--hue);
   color: var(--on-index);
-}
-
-/* Memos written from an event carry the 할 일 colour, where events live. */
-.eventIcon {
-  background: var(--lemon);
 }
 
 .fileName {

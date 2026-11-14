@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 import { THEME_COLORS } from "@/ui/theme";
 
-// Served at /manifest.webmanifest. Icons: a torn-off 일력 leaf with a marker swipe and a
-// check on ink (public/icons; source art is src/app/icon.svg).
+// Served at /manifest.webmanifest. Icons: a fan of coloured 일력 leaves, the top one with a marker swipe and a
+// check, on tangerine (public/icons; source art is src/app/icon.svg).
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/today",

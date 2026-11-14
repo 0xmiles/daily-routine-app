@@ -4,6 +4,7 @@ import { useEffect, useRef, type KeyboardEvent } from "react";
 import { dayTone, eventDays, koreanDay } from "@/features/today/eventUtils";
 import type { CalendarEvent, Todo } from "@/shared/contracts";
 import { addDays, weekdayOf } from "@/shared/time";
+import { dayHue, hueStyle } from "@/ui/hues";
 import { cx } from "@/ui/primitives";
 import styles from "./MonthGrid.module.css";
 
@@ -122,6 +123,7 @@ export function MonthGrid({ month, today, selected, events, todos, onSelect }: M
           data-testid="weekday"
           aria-hidden="true"
           className={cx(styles.weekday, i === 0 && styles.sun, i === 6 && styles.sat)}
+          style={hueStyle(dayHue(i))}
         >
           {w}
         </div>

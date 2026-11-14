@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, type CSSProperties } from "react";
 import type { BankAccount, Txn } from "@/shared/contracts";
 import { cx } from "@/ui/primitives";
 import { shiftMonth } from "./dates";
@@ -19,20 +19,31 @@ export interface PassbookProps {
   onToggleTransfer: (txn: Txn) => void;
   /** Shown instead of the rows when loading failed. */
   error?: string | null;
+  /** Sets the account's pencil (--hue) on the page. */
+  style?: CSSProperties;
 }
 
 /**
  * One page of a bank passbook (통장): 날짜 / 내용 / 찾으신 금액 / 맡기신 금액 /
- * 잔액 on the --passbook surface with faint ruled lines. Transfers between own
+ * 잔액 on a page tinted with the account's colour, with faint ruled lines. Transfers between own
  * accounts are muted and marked "이체"; tapping a row toggles that.
  */
-export function Passbook({ account, txns, month, canGoNext, onMonthChange, onToggleTransfer, error }: PassbookProps) {
+export function Passbook({
+  account,
+  txns,
+  month,
+  canGoNext,
+  onMonthChange,
+  onToggleTransfer,
+  error,
+  style,
+}: PassbookProps) {
   const hintId = useId();
   const [year, monthNumber] = [month.slice(0, 4), Number(month.slice(5, 7))];
   const lastId = txns && txns.length > 0 ? txns[txns.length - 1].id : null;
 
   return (
-    <section className={styles.passbook} aria-label={`${account.name} 통장`}>
+    <section className={styles.passbook} style={style} aria-label={`${account.name} 통장`}>
       <div className={styles.title}>
         <span className={styles.name}>
           {account.name}

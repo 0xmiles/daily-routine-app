@@ -56,7 +56,7 @@ const memoTheme = EditorView.theme({
   ".cm-line": { padding: "0 var(--memo-gutter, 0px)" },
   ".cm-memo-current": {
     backgroundImage:
-      "linear-gradient(90deg, color-mix(in srgb, var(--accent) 40%, transparent), color-mix(in srgb, var(--accent) 6%, transparent))",
+      "linear-gradient(90deg, color-mix(in srgb, var(--hue) var(--line-mix), transparent), color-mix(in srgb, var(--hue) 6%, transparent))",
   },
   ".cm-memo-bold": { fontWeight: "700" },
   ".cm-memo-title": {

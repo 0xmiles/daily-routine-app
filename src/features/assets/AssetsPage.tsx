@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import type { AssetsSummary, BankAccount, Txn } from "@/shared/contracts";
+import { accountHue, hueStyle } from "@/ui/hues";
 import { Button, cx } from "@/ui/primitives";
 import { AccountPickerSheet, type AccountChoice, KIND_LABELS } from "./AccountPickerSheet";
 import { AssetsApiError, createAccount, fetchSummary, fetchTxns, setTxnTransfer, uploadStatement } from "./client";
@@ -352,16 +353,18 @@ export function AssetsPage() {
       </header>
 
       <div className={styles.pills} role="group" aria-label="계좌 고르기">
-        {summary.accounts.map((account) => (
+        {summary.accounts.map((account, index) => (
           <button
             key={account.id}
             type="button"
             className={cx(styles.pill, account.id === selectedId && styles.pillOn)}
+            style={hueStyle(accountHue(index))}
             aria-pressed={account.id === selectedId}
             onClick={() => {
               if (account.id !== selectedId) selectAccount(account);
             }}
           >
+            <span className={styles.pillDot} aria-hidden="true" />
             {account.name}
           </button>
         ))}
@@ -369,6 +372,7 @@ export function AssetsPage() {
 
       {selected ? (
         <Passbook
+          style={hueStyle(accountHue(summary.accounts.indexOf(selected)))}
           account={selected}
           txns={txns}
           error={txnsError}

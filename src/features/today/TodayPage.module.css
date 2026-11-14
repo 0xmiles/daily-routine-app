@@ -1,4 +1,6 @@
 .page {
+  /* --hue is the day's pencil (set inline from the weekday): every leaf in the pad is a different colour. */
+  --leaf: color-mix(in srgb, var(--hue) var(--tint-mix), var(--sheet));
   display: flex;
   flex-direction: column;
   padding-top: 10px;
@@ -8,14 +10,17 @@
 
 /* ---------- 일력 page ---------- */
 
-/* The leaf is a sheet in the 할 일 index colour; the perforation below is its torn edge. */
+/* The leaf is a sheet in the day's colour, glued at the top; the perforation below is its torn edge. */
 .leafCol {
   position: relative;
   margin: 0 8px;
   padding-top: 10px;
-  border-top: 6px solid var(--lemon);
+  border-top: 6px solid var(--hue);
   border-radius: 20px 20px 0 0;
   background: var(--leaf);
+  transition:
+    background-color var(--dur-slow) ease-out,
+    border-color var(--dur-slow) ease-out;
 }
 
 .dayNav {
@@ -76,6 +81,7 @@
   border-radius: 0 0 6px 6px;
   background: var(--leaf);
   background-clip: padding-box;
+  transition: background-color var(--dur-slow) ease-out;
 }
 
 .perf > i {
@@ -256,5 +262,12 @@
 
   .mobileOnly {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leafCol,
+  .perf {
+    transition: none;
   }
 }

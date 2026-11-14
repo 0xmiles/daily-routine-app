@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useReducer, useState, useSyncExternalStore, type ReactNode } from "react";
+import { hueStyle } from "@/ui/hues";
 import { Button, Sheet, cx, type ButtonVariant } from "@/ui/primitives";
 import {
   CONNECT_PERSONAL_URL,
@@ -132,7 +133,7 @@ export function ConnectionsSection({ flags }: ConnectionsSectionProps) {
   const work = data?.work;
 
   return (
-    <section className={styles.section} aria-labelledby={headingId}>
+    <section className={styles.section} style={hueStyle("sky")} aria-labelledby={headingId}>
       <h2 id={headingId} className={styles.heading}>
         캘린더 연결
       </h2>
@@ -153,6 +154,7 @@ export function ConnectionsSection({ flags }: ConnectionsSectionProps) {
       ) : (
         <>
           <AccountGroup
+            scope="personal"
             title="개인 캘린더"
             summary="새 일정은 여기에 저장돼요."
             status={
@@ -174,7 +176,7 @@ export function ConnectionsSection({ flags }: ConnectionsSectionProps) {
             <div className={styles.actions}>
               <NavButton
                 href={CONNECT_PERSONAL_URL}
-                variant={personal?.status === "ok" ? "outline" : "ink"}
+                variant={personal?.status === "ok" ? "outline" : "color"}
                 ariaLabel={personal ? "개인 캘린더 다시 연결하기" : undefined}
               >
                 {personal ? "다시 연결하기" : "개인 캘린더 연결하기"}
@@ -184,13 +186,14 @@ export function ConnectionsSection({ flags }: ConnectionsSectionProps) {
           </AccountGroup>
 
           <AccountGroup
+            scope="work"
             title="회사 캘린더"
             summary="읽기만 해요."
             status={{ label: WORK_LABELS[work!.status], tone: WORK_TONES[work!.status] }}
           >
             <p className={styles.detail}>{workDetail(data)}</p>
             <div className={styles.actions}>
-              <NavButton href={CONNECT_WORK_URL} variant={work!.via === "none" ? "ink" : "outline"}>
+              <NavButton href={CONNECT_WORK_URL} variant={work!.via === "none" ? "color" : "outline"}>
                 회사 캘린더 연결하기
               </NavButton>
               <Button variant="outline" onClick={() => setPickerOpen(true)}>
@@ -252,12 +255,15 @@ function workDetail({ personal, work }: ConnectionsResponse): string {
   }
 }
 
+/** One calendar account. 개인 is green and 회사 tangerine, as on tags and the calendar. */
 function AccountGroup({
+  scope,
   title,
   summary,
   status,
   children,
 }: {
+  scope: "personal" | "work";
   title: string;
   summary: string;
   status: { label: string; tone: Tone };
@@ -265,7 +271,13 @@ function AccountGroup({
 }) {
   const titleId = useId();
   return (
-    <div role="group" aria-labelledby={titleId} className={styles.group}>
+    <div
+      role="group"
+      aria-labelledby={titleId}
+      className={styles.group}
+      data-scope={scope}
+      style={hueStyle(scope === "work" ? "tangerine" : "green")}
+    >
       <div className={styles.groupHead}>
         <h3 id={titleId} className={styles.groupTitle}>
           {title}

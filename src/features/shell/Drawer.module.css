@@ -144,7 +144,7 @@
 
 .item[data-tone="assets"],
 .sub[data-tone="assets"] {
-  --tone: var(--mint);
+  --tone: var(--green);
 }
 
 .item[data-tone="settings"],
@@ -193,7 +193,7 @@
 
 .on,
 .on:hover {
-  background: color-mix(in srgb, var(--tone) 30%, var(--paper));
+  background: color-mix(in srgb, var(--tone) var(--select-mix), var(--paper));
   color: var(--ink);
   font-weight: 600;
 }

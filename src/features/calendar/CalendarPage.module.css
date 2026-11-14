@@ -111,11 +111,11 @@
 }
 
 .legendWork {
-  background: var(--ink);
+  background: var(--work);
 }
 
 .legendPersonal {
-  box-shadow: inset 0 0 0 1.2px var(--ink);
+  box-shadow: inset 0 0 0 1.2px var(--personal);
 }
 
 .legendTodo {

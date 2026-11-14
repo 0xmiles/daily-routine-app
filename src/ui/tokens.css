@@ -9,35 +9,46 @@
  *   --font-head  Hahmlet (next/font; variable weight) for headings — the printed-calendar voice
  *   body         Pretendard Variable (npm "pretendard", dynamic subsets) for everything you read and type
  *
- * Index colours (spec §9.4): each menu owns one colour, like the tabs on a planner.
- * They are fills only and always carry dark ink (--on-index) in both themes,
- * so contrast holds without per-colour text rules. --accent / --accent-soft /
- * --accent-wash follow the current menu (set at the bottom of this file).
+ * Colour pencils (spec §9.4): seven fills, one per weekday and named after what the
+ * weekday's name means — 일 해(pink), 월 달(lilac), 화 불(tangerine), 수 물(aqua),
+ * 목 나무(green), 금 금빛(lemon), 토 파랑(sky). Each menu borrows one as its index
+ * tab (할 일 lemon, 메모 pink, 자산 green, 설정 lilac); memos and accounts each get
+ * their own (src/ui/hues.ts). They are fills only and always carry dark ink
+ * (--on-index) in both themes, so contrast holds without per-colour text rules.
+ * --accent / --accent-soft / --accent-wash follow the current menu (bottom of this file).
+ *
+ * No blue-black anywhere: ink is warm graphite, the dark theme is charcoal.
  */
 
 :root {
   color-scheme: light dark;
 
-  --paper: #f7f7f4; /* 종이: 바탕 */
+  --paper: #f7f6f2; /* 종이: 바탕 */
   --sheet: #ffffff; /* 흰 종이: 떠 있는 면(일정 이름표 등) */
-  --ink: #1f2533; /* 블루블랙 잉크: 글자, 회사 태그(채움), 주요 버튼 */
-  --pencil: #6e737d; /* 연필: 보조 글자, 꺼진 아이콘 */
-  --rule: #e3e3de; /* 줄: 구분선 */
-  --sun: #d7263d; /* 일요일 빨강: 일요일·공휴일, 늦음, 오래된 잔액, 지금 시각 선 */
+  --ink: #26231f; /* 흑연: 글자, 주요 버튼 */
+  --pencil: #6f6b64; /* 연필: 보조 글자, 꺼진 아이콘 */
+  --rule: #e5e2da; /* 줄: 구분선 */
+  --sun: #cc1f36; /* 일요일 빨강: 일요일·공휴일, 늦음, 오래된 잔액, 지금 시각 선 */
   --sat: #2d5bd7; /* 토요일 파랑: 토요일, 링크 */
   --marker: #ffe15a; /* 형광펜: 본문 속 오늘·지금 (글자 밑칠) */
-  --passbook: #e3f4ea; /* 통장 연두: 자산 화면의 통장 면 */
 
-  /* Index colours (fills; content on them is always --on-index). */
-  --lemon: #ffe15a; /* 할 일 */
-  --pink: #ffb5c8; /* 메모 */
-  --mint: #a5e4c0; /* 자산 */
-  --lilac: #cfc3ff; /* 설정 */
-  --on-index: #1f2533;
+  /* Colour pencils (fills; content on them is always --on-index). */
+  --pink: #ffadc4; /* 일 · 메모 */
+  --lilac: #ccbfff; /* 월 · 설정 */
+  --tangerine: #ffbb6b; /* 화 · 회사 */
+  --aqua: #8edfd1; /* 수 */
+  --green: #b8e48a; /* 목 · 자산 · 개인 */
+  --lemon: #ffe15a; /* 금 · 할 일 */
+  --sky: #a6ceff; /* 토 */
+  --on-index: #26231f;
+
+  /* 회사 / 개인 marks: dots and edges too small for a pastel (fills use --tangerine / --green). */
+  --work: #d9650a;
+  --personal: #2a8f4f;
 
   /* Derived (not palette colors): overlays and floating surfaces. */
-  --scrim: rgb(31 37 51 / 0.4);
-  --shadow-float: 0 6px 16px rgb(31 37 51 / 0.25);
+  --scrim: rgb(28 26 23 / 0.4);
+  --shadow-float: 0 6px 16px rgb(28 26 23 / 0.22);
 
   --font-stack-num: var(--font-num), "Helvetica Neue", Arial, sans-serif;
   --font-stack-body: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
@@ -92,25 +103,29 @@
   }
 }
 
-/* Dark: paper ↔ ink swap; sun / sat / marker keep their roles with adjusted lightness. */
+/* Dark: charcoal paper, light ink; sun / sat / marker keep their roles with adjusted lightness. */
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
 
-    --paper: #1f2533;
-    --sheet: #283041;
-    --ink: #f7f7f4;
-    --pencil: #a3a8b2;
-    --rule: #384052;
-    --sun: #ff5c6c;
-    --sat: #7a9bff;
+    --paper: #1c1b19;
+    --sheet: #262522;
+    --ink: #f5f3ee;
+    --pencil: #a8a39a;
+    --rule: #393732;
+    --sun: #ff6f7c;
+    --sat: #8aa8ff;
     --marker: rgb(242 208 75 / 0.42);
-    --passbook: #22332b;
 
+    --pink: #f49db5;
+    --lilac: #b8a9f5;
+    --tangerine: #f5aa5c;
+    --aqua: #7ccfc1;
+    --green: #a6d67c;
     --lemon: #f2d04b;
-    --pink: #f4a3b8;
-    --mint: #8ad4ad;
-    --lilac: #b9abf7;
+    --sky: #92bdf4;
+    --work: #f5a04c;
+    --personal: #8fd06a;
 
     --scrim: rgb(0 0 0 / 0.55);
     --shadow-float: 0 6px 16px rgb(0 0 0 / 0.5);
@@ -127,7 +142,7 @@
 }
 
 :root:has([data-section="assets"]) {
-  --accent: var(--mint);
+  --accent: var(--green);
 }
 
 :root:has([data-section="settings"]) {
@@ -137,15 +152,24 @@
 :root {
   --accent-soft: color-mix(in srgb, var(--accent) 42%, var(--paper));
   --accent-wash: color-mix(in srgb, var(--accent) 16%, var(--paper));
-  /* The 일력 leaf on the today screen. */
-  --leaf: color-mix(in srgb, var(--lemon) 34%, var(--sheet));
+  /* One thing's own pencil (a memo, an account, the day's leaf); set inline via src/ui/hues.ts. */
+  --hue: var(--accent);
+  /* How strongly a surface takes its pencil (a memo, an account, the day's leaf):
+     color-mix(in srgb, var(--hue) var(--tint-mix), var(--sheet)). --hue is set where
+     the surface is, so the mix has to be written there too. */
+  --tint-mix: 30%;
+  /* A selected row, and the line being written in a memo. */
+  --select-mix: 34%;
+  --line-mix: 40%;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Yellow over navy turns olive, so in the dark the leaf is plain sheet and
-       only its glued top edge keeps the lemon. */
-    --leaf: var(--sheet);
+    /* Pastel over charcoal turns muddy, so dark tints stay faint; the full
+       colour shows on edges and tiles instead. */
+    --tint-mix: 9%;
+    --select-mix: 17%;
+    --line-mix: 20%;
   }
 }
 

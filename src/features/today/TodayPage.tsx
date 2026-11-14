@@ -15,7 +15,8 @@ import { TodoEditorSheet } from "@/features/todos/TodoEditorSheet";
 import { TodoRow } from "@/features/todos/TodoRow";
 import { TodoSection } from "@/features/todos/TodoSection";
 import type { CalendarEvent, EventsResponse, Todo } from "@/shared/contracts";
-import { addDays, seoulToday } from "@/shared/time";
+import { addDays, seoulToday, weekdayOf } from "@/shared/time";
+import { dayHue, hueStyle } from "@/ui/hues";
 import { Button, cx } from "@/ui/primitives";
 import { DateLeaf, type LeafCounts } from "./DateLeaf";
 import { DayTimeline } from "./DayTimeline";
@@ -192,7 +193,12 @@ export function TodayPage({ initialDate, today: serverToday }: TodayPageProps) {
   const openEvent = (event: CalendarEvent) => setSelected(event);
 
   return (
-    <div className={styles.page} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <div
+      className={styles.page}
+      style={hueStyle(dayHue(holiday ? 0 : weekdayOf(date)))}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
       <div className={styles.leafCol}>
         <DateLeaf key={date} date={date} counts={counts} holiday={holiday} enter={enter} />
         <div className={styles.dayNav}>

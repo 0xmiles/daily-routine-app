@@ -41,7 +41,7 @@
 }
 
 .tab[data-tab="assets"] {
-  --tab: var(--mint);
+  --tab: var(--green);
 }
 
 /* Index tab behind the icon: a pill in the tab's own colour when current. */

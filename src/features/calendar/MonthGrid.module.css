@@ -11,6 +11,17 @@
   color: var(--pencil);
 }
 
+/* Each weekday's pencil (the colour its 일력 leaf has on the today screen). */
+.weekday::after {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 4px;
+  margin: 4px auto 0;
+  border-radius: 2px;
+  background: var(--hue);
+}
+
 .days {
   display: grid;
   grid-column: 1 / -1;
@@ -91,11 +102,11 @@
 }
 
 .marks .work {
-  background: var(--ink);
+  background: var(--work);
 }
 
 .marks .personal {
-  box-shadow: inset 0 0 0 1.2px var(--ink);
+  box-shadow: inset 0 0 0 1.2px var(--personal);
 }
 
 .marks .todo {

@@ -2,6 +2,6 @@
 // variables: <meta name="theme-color"> (viewport.themeColor) and the web manifest.
 // Keep in sync with tokens.css.
 export const THEME_COLORS = {
-  light: { paper: "#F7F7F4", ink: "#1F2533" },
-  dark: { paper: "#1F2533", ink: "#F7F7F4" },
+  light: { paper: "#F7F6F2", ink: "#26231F" },
+  dark: { paper: "#1C1B19", ink: "#F5F3EE" },
 } as const;

@@ -1,13 +1,13 @@
-/* 통장 한 면: --passbook paper, faint ruled lines, narrow tabular numbers. */
+/* 통장 한 면: a page tinted with the account's pencil (--hue), faint ruled lines, narrow tabular numbers. */
 
-/* The mint top edge is the passbook's cover showing above the page. */
+/* The coloured top edge is the passbook's cover showing above the page. */
 .passbook {
   position: relative;
   margin: 0 -4px;
   padding: 12px 10px 8px;
-  border-top: 6px solid var(--mint);
+  border-top: 6px solid var(--hue);
   border-radius: 10px;
-  background: var(--passbook);
+  background: color-mix(in srgb, var(--hue) var(--tint-mix), var(--sheet));
   color: var(--ink);
 }
 

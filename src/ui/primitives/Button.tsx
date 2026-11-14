@@ -2,10 +2,13 @@ import type { ButtonHTMLAttributes } from "react";
 import { cx } from "./cx";
 import styles from "./Button.module.css";
 
-export type ButtonVariant = "ink" | "outline" | "ghost";
+export type ButtonVariant = "ink" | "color" | "outline" | "ghost";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  /** ink = filled primary (default), outline = ink border, ghost = text only. */
+  /**
+   * ink = filled primary (default), color = filled with the pencil in --hue (hueStyle),
+   * outline = ink border, ghost = text only.
+   */
   variant?: ButtonVariant;
 }
 

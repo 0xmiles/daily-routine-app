@@ -3,6 +3,7 @@ import { ConnectionsSection } from "@/features/calendar/ConnectionsSection";
 import { PushToggle } from "@/features/notify/PushToggle";
 import { ReminderSettings } from "@/features/notify/ReminderSettings";
 import { LogoutButton } from "@/features/shell/LogoutButton";
+import { hueStyle } from "@/ui/hues";
 import styles from "./settings.module.css";
 
 export const metadata: Metadata = { title: "설정" };
@@ -15,7 +16,7 @@ export default function SettingsPage() {
 
       <ConnectionsSection />
 
-      <section className={styles.section} aria-labelledby="settings-notify">
+      <section className={styles.section} style={hueStyle("pink")} aria-labelledby="settings-notify">
         <h2 id="settings-notify" className={styles.heading}>
           알림
         </h2>
@@ -25,7 +26,7 @@ export default function SettingsPage() {
         <ReminderSettings />
       </section>
 
-      <section className={styles.section} aria-labelledby="settings-account">
+      <section className={styles.section} style={hueStyle("lilac")} aria-labelledby="settings-account">
         <h2 id="settings-account" className={styles.heading}>
           계정
         </h2>

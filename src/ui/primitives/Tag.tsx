@@ -6,7 +6,7 @@ import styles from "./Tag.module.css";
 const LABELS: Record<Scope, string> = { work: "회사", personal: "개인" };
 
 export interface TagProps extends HTMLAttributes<HTMLSpanElement> {
-  /** work = filled ink, personal = ink outline. */
+  /** work = tangerine fill, personal = green outline. */
   scope: Scope;
   /** Defaults to "회사" / "개인". */
   children?: ReactNode;

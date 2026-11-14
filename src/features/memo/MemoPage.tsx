@@ -16,6 +16,7 @@ import {
 import { onDataChanged, onNewMemoRequest, takeNewMemoTitle } from "@/features/shell/events";
 import { useIsWide } from "@/features/shell/useMediaQuery";
 import { formatKoreanTimestamp } from "@/shared/time";
+import { hueFor, hueStyle } from "@/ui/hues";
 import { Button, Sheet, cx } from "@/ui/primitives";
 import { BlockEditor, type BlockEditorHandle } from "./BlockEditor";
 import { memoHref } from "./client";
@@ -422,12 +423,13 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
                   <a
                     href={memoHref(block.id ?? block.key)}
                     className={styles.file}
+                    style={hueStyle(hueFor(block.key))}
                     aria-current={on ? "page" : undefined}
                     onClick={(event) => onRowClick(event, block.key)}
                   >
                     <span className={styles.fileTitle}>
                       {block.eventRef ? (
-                        <span className={cx(styles.fileIcon, styles.eventIcon)} role="img" aria-label="일정 메모">
+                        <span className={styles.fileIcon} role="img" aria-label="일정 메모">
                           <CalendarIcon size={13} />
                         </span>
                       ) : (
@@ -472,7 +474,11 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
               </button>
             </header>
             <div className={styles.paneNotices}>{notices}</div>
-            <article className={styles.doc} data-toolbar={editingPhone || undefined}>
+            <article
+              className={styles.doc}
+              style={hueStyle(hueFor(selected.key))}
+              data-toolbar={editingPhone || undefined}
+            >
               <p className={styles.stamp}>
                 <span className="num">{formatKoreanTimestamp(selected.updatedAt)}</span>에 고침
               </p>
