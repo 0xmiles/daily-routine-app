@@ -249,15 +249,18 @@ describe("QuickAdd", () => {
     expect(screen.getByRole("dialog", { name: "빠른 추가" })).toBeTruthy();
   });
 
-  it("quick add event starts at the next full hour for one hour", async () => {
+  it("quick add event asks for the day and time, prefilled with the next full hour for one hour", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-11-14T05:20:00Z")); // 14:20 KST
+    vi.setSystemTime(new Date("2026-11-14T05:20:00Z")); // Sat 14:20 KST
     setWide(true);
     renderShell();
     fireEvent.keyDown(document, { key: "n", metaKey: true });
     const dialog = screen.getByRole("dialog", { name: "빠른 추가" });
     await userEvent.click(within(dialog).getByRole("radio", { name: "일정" }));
-    expect(await within(dialog).findByText(/15:00부터 1시간/)).toBeTruthy();
+    expect((await within(dialog).findByLabelText<HTMLInputElement>("날짜")).value).toBe("2026-11-14");
+    expect(within(dialog).getByLabelText<HTMLInputElement>("시작").value).toBe("15:00");
+    expect(within(dialog).getByLabelText<HTMLInputElement>("끝").value).toBe("16:00");
+    expect(within(dialog).getByText(/^11월 14일\(토\) 15:00부터 16:00까지 잡아요\./)).toBeTruthy();
     await userEvent.type(within(dialog).getByRole("textbox", { name: "제목" }), "치과{Enter}");
     expect(createEvent).toHaveBeenCalledWith({
       title: "치과",
@@ -265,6 +268,66 @@ describe("QuickAdd", () => {
       end: "2026-11-14T16:00:00+09:00",
       allDay: false,
     });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "빠른 추가" })).toBeNull());
+    expect(screen.getByRole("status").textContent).toBe("일정을 11월 14일(토) 15:00에 추가했어요.");
+  });
+
+  it("quick add event saves the picked day and time; the end follows the start", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-14T05:20:00Z")); // Sat 14:20 KST
+    setWide(false);
+    renderShell();
+    await userEvent.click(screen.getByRole("button", { name: "빠른 추가" }));
+    const dialog = screen.getByRole("dialog", { name: "빠른 추가" });
+    await userEvent.click(within(dialog).getByRole("radio", { name: "일정" }));
+    fireEvent.change(await within(dialog).findByLabelText("날짜"), { target: { value: "2026-11-16" } });
+    fireEvent.change(within(dialog).getByLabelText("시작"), { target: { value: "10:00" } });
+    expect(within(dialog).getByLabelText<HTMLInputElement>("끝").value).toBe("11:00");
+    fireEvent.change(within(dialog).getByLabelText("끝"), { target: { value: "11:30" } });
+    expect(within(dialog).getByText(/^11월 16일\(월\) 10:00부터 11:30까지 잡아요\./)).toBeTruthy();
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "제목" }), "병원{Enter}");
+    expect(createEvent).toHaveBeenCalledWith({
+      title: "병원",
+      start: "2026-11-16T10:00:00+09:00",
+      end: "2026-11-16T11:30:00+09:00",
+      allDay: false,
+    });
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("일정을 11월 16일(월) 10:00에 추가했어요."));
+  });
+
+  it("quick add event says what to fix instead of saving a bad time", async () => {
+    setWide(false);
+    renderShell();
+    await userEvent.click(screen.getByRole("button", { name: "빠른 추가" }));
+    const dialog = screen.getByRole("dialog", { name: "빠른 추가" });
+    await userEvent.click(within(dialog).getByRole("radio", { name: "일정" }));
+    fireEvent.change(await within(dialog).findByLabelText("시작"), { target: { value: "15:00" } });
+    fireEvent.change(within(dialog).getByLabelText("끝"), { target: { value: "14:00" } });
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "제목" }), "치과{Enter}");
+    expect((await within(dialog).findByRole("alert")).textContent).toBe("끝나는 시간은 시작 시간보다 늦어야 해요.");
+
+    fireEvent.change(within(dialog).getByLabelText("날짜"), { target: { value: "" } });
+    expect(within(dialog).getByText("날짜와 시간을 골라 주세요.")).toBeTruthy();
+    await userEvent.click(within(dialog).getByRole("button", { name: "일정 추가하기" }));
+    expect((await within(dialog).findByRole("alert")).textContent).toBe("날짜를 골라 주세요.");
+    expect(createEvent).not.toHaveBeenCalled();
+  });
+
+  it("자세히 on 일정 carries the title, day and time to the full editor", async () => {
+    setWide(false);
+    renderShell();
+    await userEvent.click(screen.getByRole("button", { name: "빠른 추가" }));
+    const quick = screen.getByRole("dialog", { name: "빠른 추가" });
+    await userEvent.click(within(quick).getByRole("radio", { name: "일정" }));
+    await userEvent.type(await within(quick).findByRole("textbox", { name: "제목" }), "치과");
+    fireEvent.change(within(quick).getByLabelText("날짜"), { target: { value: "2026-11-20" } });
+    fireEvent.change(within(quick).getByLabelText("시작"), { target: { value: "09:00" } });
+    await userEvent.click(within(quick).getByRole("button", { name: "자세히" }));
+    const editor = screen.getByRole("dialog", { name: "새 일정" });
+    expect(within(editor).getByLabelText<HTMLInputElement>("제목").value).toBe("치과");
+    expect(within(editor).getByLabelText<HTMLInputElement>("날짜").value).toBe("2026-11-20");
+    expect(within(editor).getByLabelText<HTMLInputElement>("시작").value).toBe("09:00");
+    expect(within(editor).getByLabelText<HTMLInputElement>("끝").value).toBe("10:00");
   });
 
   it("event tab asks to connect the personal calendar when it isn't connected", async () => {

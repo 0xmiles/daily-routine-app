@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useEffectEvent, useId, useRef, useState, type TouchEvent } from "react";
 import { fetchEvents } from "@/features/calendar/client";
 import { EventDetailSheet } from "@/features/calendar/EventDetailSheet";
+import { EventEditorSheet } from "@/features/calendar/EventEditorSheet";
 import { fetchEventKeys } from "@/features/memo/client";
 import { ConnectPersonalHint } from "@/features/shell/ConnectPersonalHint";
 import { onDataChanged } from "@/features/shell/events";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/features/shell/icons";
 import { setPersonalConnected } from "@/features/shell/personalConnection";
-import { useIsWide } from "@/features/shell/useMediaQuery";
 import { completeTodo, fetchTodos, TODOS_CHANGED_EVENT, uncompleteTodo } from "@/features/todos/client";
 import { todayBucket } from "@/features/todos/rules";
 import { TodoEditorSheet } from "@/features/todos/TodoEditorSheet";
@@ -17,11 +17,10 @@ import { TodoSection } from "@/features/todos/TodoSection";
 import type { CalendarEvent, EventsResponse, Todo } from "@/shared/contracts";
 import { addDays, seoulToday, weekdayOf } from "@/shared/time";
 import { dayHue, hueStyle } from "@/ui/hues";
-import { Button, cx } from "@/ui/primitives";
+import { Button } from "@/ui/primitives";
 import { DateLeaf, type LeafCounts } from "./DateLeaf";
 import { DayTimeline } from "./DayTimeline";
-import { EventRow } from "./EventRow";
-import { eventKeyOf, eventsOn, holidayOn } from "./eventUtils";
+import { eventsOn, holidayOn } from "./eventUtils";
 import { useNow } from "./useNow";
 import styles from "./TodayPage.module.css";
 
@@ -46,9 +45,9 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 /**
- * 할 일 › 오늘: one 일력 page for the day, its events and todos. Swipe or ←/→
- * turns the page (`?date=` follows). At 900px and wider: leaf | 09–21 time
- * ruler with the now line | todos.
+ * 할 일 › 오늘: one 일력 page for the day, its events on a 09–21 time ruler
+ * (tap an empty hour to start a new event there) and its todos. Swipe or ←/→
+ * turns the page (`?date=` follows). At 900px and wider: leaf | ruler | todos.
  */
 export function TodayPage({ initialDate, today: serverToday }: TodayPageProps) {
   // null = "follow today": the page turns over by itself at Seoul midnight
@@ -59,8 +58,9 @@ export function TodayPage({ initialDate, today: serverToday }: TodayPageProps) {
   const [memoKeys, setMemoKeys] = useState<ReadonlySet<string>>(EMPTY_KEYS);
   const [todos, setTodos] = useState<TodosState>(null);
   const [selected, setSelected] = useState<CalendarEvent | null>(null);
+  /** A new event started from an empty hour on the ruler. */
+  const [creating, setCreating] = useState<{ date: string; startTime: string } | null>(null);
   const [reloadEvents, setReloadEvents] = useState(0);
-  const wide = useIsWide();
   const clock = useNow();
   const today = clock ? seoulToday(clock) : serverToday;
   const date = pinnedDate ?? today;
@@ -150,7 +150,9 @@ export function TodayPage({ initialDate, today: serverToday }: TodayPageProps) {
   }, []);
 
   function onTouchStart(e: TouchEvent) {
-    if (e.touches.length !== 1 || isTypingTarget(e.target)) {
+    // Sheets are portalled, but their touches still bubble here through React.
+    const inSheet = e.target instanceof Element && e.target.closest('[role="dialog"]') !== null;
+    if (e.touches.length !== 1 || isTypingTarget(e.target) || inSheet) {
       touch.current = null;
       return;
     }
@@ -166,6 +168,8 @@ export function TodayPage({ initialDate, today: serverToday }: TodayPageProps) {
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
     if (Math.abs(dx) >= SWIPE_PX && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - start.at < 800) {
+      // A swipe that began on an hour row turns the page; it must not also tap the row.
+      if (e.cancelable) e.preventDefault();
       go(dx < 0 ? 1 : -1);
     }
   }
@@ -241,33 +245,20 @@ export function TodayPage({ initialDate, today: serverToday }: TodayPageProps) {
           </div>
         )}
         {loaded && dayEvents.length === 0 && (
-          <p className={styles.empty}>{isToday ? "오늘은 일정이 없어요." : "이날은 일정이 없어요."}</p>
+          <>
+            <p className={styles.empty}>{isToday ? "오늘은 일정이 없어요." : "이날은 일정이 없어요."}</p>
+            {loaded.personalConnected && <p className={styles.note}>시간대를 누르면 그 시간에 새 일정을 만들어요.</p>}
+          </>
         )}
 
-        {loaded && dayEvents.length > 0 && wide !== true && (
-          <ul className={cx(styles.list, styles.mobileOnly)}>
-            {dayEvents.map((event) => (
-              <EventRow
-                key={eventKeyOf(event)}
-                event={event}
-                date={date}
-                hasMemo={memoKeys.has(eventKeyOf(event))}
-                onOpen={openEvent}
-              />
-            ))}
-          </ul>
-        )}
-        {wide !== false && (
-          <div className={styles.desktopOnly}>
-            <DayTimeline
-              date={date}
-              events={dayEvents}
-              now={isToday ? clock : null}
-              memoKeys={memoKeys}
-              onOpen={openEvent}
-            />
-          </div>
-        )}
+        <DayTimeline
+          date={date}
+          events={dayEvents}
+          now={isToday ? clock : null}
+          memoKeys={memoKeys}
+          onOpen={openEvent}
+          onCreate={(startTime) => setCreating({ date, startTime })}
+        />
 
         {loaded && !loaded.personalConnected && <ConnectPersonalHint className={styles.hint} />}
         {loaded && loaded.workStatus === "error" && (
@@ -285,6 +276,15 @@ export function TodayPage({ initialDate, today: serverToday }: TodayPageProps) {
         onClose={() => setSelected(null)}
         onChanged={() => setReloadEvents((n) => n + 1)}
       />
+      {/* Saving emits a data change for "event", which reloads the day above. */}
+      {creating && (
+        <EventEditorSheet
+          open
+          initialDate={creating.date}
+          initialStartTime={creating.startTime}
+          onClose={() => setCreating(null)}
+        />
+      )}
     </div>
   );
 }

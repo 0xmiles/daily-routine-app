@@ -11,7 +11,7 @@ import { Drawer } from "./Drawer";
 import { requestNewMemo } from "./events";
 import { MenuIcon, SettingsIcon } from "./icons";
 import { readPref, writePref } from "./prefs";
-import { QuickAdd, type QuickAddKind } from "./QuickAdd";
+import { QuickAdd, type QuickAddKind, type QuickAddWhen } from "./QuickAdd";
 import { SECTION_TITLES, sectionOf } from "./sections";
 import { TodoSegment, todoViewOf } from "./TodoSegment";
 import { useBodyFlag } from "./useBodyFlag";
@@ -28,7 +28,7 @@ const DRAWER_PREF = "drawer";
 const ROOMY_QUERY = "(min-width: 1200px)";
 const TOAST_MS = 4000;
 
-type Editor = { kind: "todo" } | { kind: "event"; title: string } | null;
+type Editor = { kind: "todo" } | { kind: "event"; title: string; when?: QuickAddWhen } | null;
 
 function isBackslash(e: KeyboardEvent): boolean {
   // Korean Mac layouts type ₩ on the backslash key.
@@ -240,14 +240,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           setQuickOpen(false);
           setToast({ id: Date.now(), text });
         }}
-        onMore={(kind: QuickAddKind, title: string) => {
+        onMore={(kind: QuickAddKind, title: string, when?: QuickAddWhen) => {
           setQuickOpen(false);
-          setEditor(kind === "todo" ? { kind: "todo" } : { kind: "event", title });
+          setEditor(kind === "todo" ? { kind: "todo" } : { kind: "event", title, when });
         }}
       />
       <TodoEditorSheet open={editor?.kind === "todo"} onClose={() => setEditor(null)} />
       {editor?.kind === "event" && (
-        <EventEditorSheet open initialTitle={editor.title} onClose={() => setEditor(null)} />
+        <EventEditorSheet
+          open
+          initialTitle={editor.title}
+          initialDate={editor.when?.date || undefined}
+          initialStartTime={editor.when?.startTime || undefined}
+          initialEndTime={editor.when?.endTime || undefined}
+          onClose={() => setEditor(null)}
+        />
       )}
 
       <div role="status" aria-live="polite" className={cx(styles.toast, toast && styles.toastOn)}>

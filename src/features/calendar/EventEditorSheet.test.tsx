@@ -20,7 +20,8 @@ vi.mock("@/features/calendar/client", () => ({
 
 import { createEvent, fetchEvents, updateEvent } from "@/features/calendar/client";
 import { resetPersonalConnectedForTests, setPersonalConnected } from "@/features/shell/personalConnection";
-import { buildEventInput, EventEditorSheet } from "./EventEditorSheet";
+import { EventEditorSheet } from "./EventEditorSheet";
+import { buildEventInput } from "./eventForm";
 
 beforeAll(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -51,6 +52,40 @@ describe("EventEditorSheet", () => {
       description: "보험증 챙기기",
     });
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it("starts at a given hour on a given day and lasts an hour", async () => {
+    render(<EventEditorSheet open initialDate="2026-11-20" initialStartTime="09:00" onClose={() => {}} />);
+    expect((screen.getByLabelText("날짜") as HTMLInputElement).value).toBe("2026-11-20");
+    expect((screen.getByLabelText("시작") as HTMLInputElement).value).toBe("09:00");
+    expect((screen.getByLabelText("끝") as HTMLInputElement).value).toBe("10:00");
+    expect((screen.getByLabelText("종일") as HTMLInputElement).checked).toBe(false);
+    await userEvent.type(screen.getByLabelText("제목"), "회의");
+    await userEvent.click(screen.getByRole("button", { name: "일정 만들기" }));
+    expect(createEvent).toHaveBeenCalledWith({
+      title: "회의",
+      start: "2026-11-20T09:00:00+09:00",
+      end: "2026-11-20T10:00:00+09:00",
+      allDay: false,
+    });
+  });
+
+  it("takes a given end time, and a 23:00 start ends at midnight", async () => {
+    const { unmount } = render(
+      <EventEditorSheet open initialDate="2026-11-20" initialStartTime="13:30" initialEndTime="15:00" onClose={() => {}} />,
+    );
+    expect((screen.getByLabelText("끝") as HTMLInputElement).value).toBe("15:00");
+    unmount();
+
+    render(<EventEditorSheet open initialTitle="야식" initialDate="2026-11-20" initialStartTime="23:00" onClose={() => {}} />);
+    expect((screen.getByLabelText("끝") as HTMLInputElement).value).toBe("00:00");
+    await userEvent.click(screen.getByRole("button", { name: "일정 만들기" }));
+    expect(createEvent).toHaveBeenCalledWith({
+      title: "야식",
+      start: "2026-11-20T23:00:00+09:00",
+      end: "2026-11-21T00:00:00+09:00",
+      allDay: false,
+    });
   });
 
   it("all-day events send an exclusive end date", () => {
