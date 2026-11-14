@@ -1,4 +1,4 @@
-/* 18px box inside a 32px hit area; negative margin keeps the visual alignment. */
+/* 20px box inside a 32px hit area; negative margin keeps the visual alignment. */
 .root {
   position: relative;
   display: inline-flex;
@@ -7,7 +7,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  margin: -7px;
+  margin: -6px;
   cursor: pointer;
 }
 
@@ -25,11 +25,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  border: 1.5px solid var(--ink);
-  border-radius: 4px;
-  color: var(--paper);
+  width: 20px;
+  height: 20px;
+  border: 1.6px solid var(--ink);
+  border-radius: 6px;
+  color: var(--on-index);
   background: transparent;
   transition: background-color 120ms ease-out;
   pointer-events: none;
@@ -47,8 +47,8 @@
 }
 
 .checked .box {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--accent);
+  border-color: color-mix(in srgb, var(--on-index) 70%, var(--accent));
 }
 
 .checked .mark {

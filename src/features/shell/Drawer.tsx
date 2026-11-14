@@ -8,6 +8,8 @@ import { sectionOf } from "./sections";
 import { todoViewOf } from "./TodoSegment";
 import styles from "./Drawer.module.css";
 
+type Tone = "todo" | "memo" | "assets" | "settings";
+
 export interface DrawerProps {
   id: string;
   /** overlay: covers the content with a scrim. pinned: a sidebar next to the content. */
@@ -32,15 +34,17 @@ export function Drawer({ id, mode, pathname, pinned, onTogglePin, onNavigate, on
     panelRef.current?.querySelector<HTMLElement>("a, button")?.focus();
   }, [mode]);
 
-  const item = (href: string, label: string, on: boolean, icon: React.ReactNode, sub = false) => (
+  // tone: the index colour of the menu this item opens (planner tabs, spec §9.4).
+  const item = (href: string, label: string, on: boolean, icon: React.ReactNode, tone: Tone, sub = false) => (
     <Link
       href={href}
       className={cx(sub ? styles.sub : styles.item, on && styles.on)}
+      data-tone={tone}
       aria-current={on ? "page" : undefined}
       onClick={onNavigate}
     >
-      {icon}
-      <span className={on ? "hl" : undefined}>{label}</span>
+      {icon && <span className={styles.tile}>{icon}</span>}
+      <span>{label}</span>
     </Link>
   );
 
@@ -54,7 +58,7 @@ export function Drawer({ id, mode, pathname, pinned, onTogglePin, onNavigate, on
         <span className={styles.logo}>
           {/* eslint-disable-next-line @next/next/no-img-element -- tiny static brand mark */}
           <img src="/icons/mark.svg" alt="" className={styles.mark} width={26} height={26} />
-          데일리
+          <span className={styles.brand}>데일리</span>
         </span>
         <button
           type="button"
@@ -68,16 +72,16 @@ export function Drawer({ id, mode, pathname, pinned, onTogglePin, onNavigate, on
       </div>
       <nav aria-label="전체 메뉴" className={styles.nav}>
         <div className={styles.group}>
-          {item("/today", "할 일", section === "todo" && todoView === null, <TodoIcon size={18} />)}
-          {item("/today", "오늘", todoView === "today", null, true)}
-          {item("/calendar", "달력", todoView === "calendar", null, true)}
-          {item("/list", "목록", todoView === "list", null, true)}
-          {item("/memo", "메모", section === "memo", <MemoIcon size={18} />)}
-          {item("/assets", "자산", section === "assets", <AssetsIcon size={18} />)}
+          {item("/today", "할 일", section === "todo" && todoView === null, <TodoIcon size={16} />, "todo")}
+          {item("/today", "오늘", todoView === "today", null, "todo", true)}
+          {item("/calendar", "달력", todoView === "calendar", null, "todo", true)}
+          {item("/list", "목록", todoView === "list", null, "todo", true)}
+          {item("/memo", "메모", section === "memo", <MemoIcon size={16} />, "memo")}
+          {item("/assets", "자산", section === "assets", <AssetsIcon size={16} />, "assets")}
         </div>
         <div className={styles.bottom}>
-          {item("/assets", "거래내역 올리기", false, <UploadIcon size={18} />)}
-          {item("/settings", "설정", section === "settings", <SettingsIcon size={18} />)}
+          {item("/assets", "거래내역 올리기", false, <UploadIcon size={16} />, "assets")}
+          {item("/settings", "설정", section === "settings", <SettingsIcon size={16} />, "settings")}
         </div>
       </nav>
     </aside>

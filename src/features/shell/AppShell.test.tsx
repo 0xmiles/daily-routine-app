@@ -82,7 +82,9 @@ describe("AppShell narrow (<900px)", () => {
     // The active tab label is highlighted.
     const active = within(tabs).getByRole("link", { name: "할 일" });
     expect(active.getAttribute("aria-current")).toBe("page");
-    expect(active.querySelector(".hl")?.textContent).toBe("할 일");
+    // The current tab wears its menu's index colour, and the shell names the menu for the accent.
+    expect(active.getAttribute("data-tab")).toBe("todo");
+    expect(document.querySelector('[data-section="todo"]')).toBeTruthy();
     expect(screen.getByRole("button", { name: "빠른 추가" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "메뉴 열기" })).toBeNull();
     expect(screen.getByText("본문")).toBeTruthy();

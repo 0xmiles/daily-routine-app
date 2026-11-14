@@ -89,9 +89,9 @@ export function TrashIcon({ size = 19 }: { size?: number }) {
   );
 }
 
-export function FileIcon({ size = 40 }: { size?: number }) {
+export function FileIcon({ size = 40, strokeWidth = 1.4 }: { size?: number; strokeWidth?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={1.4} {...base}>
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={strokeWidth} {...base}>
       <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
       <path d="M14 3v5h5M9 13h6M9 17h4" />
     </svg>

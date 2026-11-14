@@ -1,44 +1,67 @@
 .segment {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-left: -10px;
+  gap: 2px;
+  margin-left: -8px;
 }
 
+/* 44px hit area around a 34px pill. */
 .item {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: var(--tap);
   min-height: var(--tap);
-  padding: 0 10px;
-  border-radius: var(--radius-md);
+  padding: 0 14px;
   color: var(--pencil);
-  font-size: 16px;
+  font-size: var(--fs-base);
   font-weight: 500;
   text-decoration: none;
-  transition:
-    color var(--dur-fast) ease-out,
-    background-color var(--dur-fast) ease-out;
+  isolation: isolate;
+  transition: color var(--dur-fast) ease-out;
+}
+
+.item::before {
+  content: "";
+  position: absolute;
+  inset: 5px 0;
+  z-index: -1;
+  border-radius: var(--radius-pill);
+  transition: background-color var(--dur-fast) ease-out;
 }
 
 .item:hover {
   color: var(--ink);
+}
+
+.item:hover::before {
   background: var(--hover);
 }
 
-.item:active {
+.item:active::before {
   background: var(--press);
 }
 
 .item:focus-visible {
-  outline: 2px solid var(--sat);
-  outline-offset: -2px;
+  outline: none;
 }
 
-.on {
-  color: var(--ink);
+.item:focus-visible::before {
+  outline: 2px solid var(--sat);
+  outline-offset: 1px;
+}
+
+.on,
+.on:hover {
+  color: var(--on-index);
   font-weight: 700;
+}
+
+.on::before,
+.on:hover::before,
+.on:active::before {
+  background: var(--lemon);
 }
 
 @media (min-width: 900px) {
@@ -47,7 +70,12 @@
   }
 
   .item {
-    min-height: 36px;
+    min-height: 40px;
+    padding: 0 13px;
     font-size: 14.5px;
+  }
+
+  .item::before {
+    inset: 4px 0;
   }
 }

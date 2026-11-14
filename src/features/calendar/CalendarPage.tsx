@@ -121,7 +121,10 @@ export function CalendarPage({ initialDate, today: serverToday }: CalendarPagePr
           <div className={styles.year}>
             <span className="num">{year}</span>년
           </div>
-          <h1 className={styles.month}>{monthNumber}월</h1>
+          <h1 className={styles.month}>
+            {monthNumber}
+            <span className={styles.monthUnit}>월</span>
+          </h1>
         </div>
         <div className={styles.arrows}>
           {!today.startsWith(month) && (

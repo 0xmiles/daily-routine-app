@@ -55,8 +55,12 @@
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  font-size: 16px;
-  font-weight: 700;
+}
+
+.brand {
+  font-family: var(--font-stack-head);
+  font-size: var(--fs-lg);
+  font-weight: 800;
   letter-spacing: -0.02em;
 }
 
@@ -121,28 +125,52 @@
 
 .item,
 .sub {
+  --tone: var(--lemon);
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   min-height: 40px;
-  padding: 6px 10px;
+  padding: 5px 10px 5px 7px;
   border-radius: var(--radius-md);
   font-size: 14.5px;
   color: var(--pencil);
   text-decoration: none;
 }
 
+.item[data-tone="memo"],
+.sub[data-tone="memo"] {
+  --tone: var(--pink);
+}
+
+.item[data-tone="assets"],
+.sub[data-tone="assets"] {
+  --tone: var(--mint);
+}
+
+.item[data-tone="settings"],
+.sub[data-tone="settings"] {
+  --tone: var(--lilac);
+}
+
 .item {
   color: var(--ink);
 }
 
-.item svg {
-  color: var(--pencil);
+/* Index tab: a small square in the menu's colour. */
+.tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tone) var(--tile-mix, 55%), var(--paper));
+  color: var(--on-index);
 }
 
 .sub {
   min-height: 36px;
-  padding-left: 37px;
+  padding-left: 43px;
   font-size: 14px;
 }
 
@@ -163,14 +191,44 @@
   outline-offset: -2px;
 }
 
-.on {
-  background: var(--selected);
+.on,
+.on:hover {
+  background: color-mix(in srgb, var(--tone) 30%, var(--paper));
   color: var(--ink);
   font-weight: 600;
 }
 
-.on svg {
-  color: var(--ink);
+.on .tile {
+  background: var(--tone);
+}
+
+/* Sub-view: a short index-coloured bar instead of a filled row. */
+.sub.on {
+  position: relative;
+  background: transparent;
+}
+
+.sub.on::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: 4px;
+  background: var(--tone);
+  box-shadow: inset 0 0 0 1.2px color-mix(in srgb, var(--on-index) 18%, transparent);
+}
+
+.sub.on:hover {
+  background: var(--hover);
+}
+
+@media (prefers-color-scheme: dark) {
+  .tile {
+    --tile-mix: 82%;
+  }
 }
 
 @keyframes fade-in {

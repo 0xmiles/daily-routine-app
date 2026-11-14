@@ -20,7 +20,7 @@ export interface TodoSegmentProps {
 /**
  * 오늘 · 달력 · 목록 switch inside the 할 일 tab. Rendered once, by the shell's
  * top bar, so it sits in the same place on all three views. The selected one is
- * highlighted (marker underlay, spec §5.7 rule 4).
+ * a pill in the 할 일 index colour (spec §9.4).
  */
 export function TodoSegment({ active, className }: TodoSegmentProps) {
   return (
@@ -34,7 +34,7 @@ export function TodoSegment({ active, className }: TodoSegmentProps) {
             className={cx(styles.item, on && styles.on)}
             aria-current={on ? "page" : undefined}
           >
-            <span className={on ? "hl" : undefined}>{item.label}</span>
+            {item.label}
           </Link>
         );
       })}

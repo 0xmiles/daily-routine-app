@@ -135,6 +135,7 @@ function QuickAddForm({ onSaved, onMore, onMemoCreated, defaultKind }: Omit<Quic
               aria-checked={on}
               tabIndex={on ? 0 : -1}
               className={cx(styles.kind, on && styles.kindOn)}
+              data-kind={k.kind}
               onClick={() => choose(k.kind)}
               onKeyDown={(e) => onRadioKey(e, index)}
             >

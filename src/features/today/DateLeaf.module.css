@@ -1,7 +1,7 @@
 /* The one loud thing on the screen is the big date (spec §5.7 rule 1). */
 
 .leaf {
-  padding: 4px 20px 12px;
+  padding: 4px 12px 14px;
 }
 
 .ym {
@@ -13,7 +13,7 @@
 }
 
 .year {
-  color: var(--pencil);
+  color: color-mix(in srgb, var(--ink) 72%, var(--leaf));
 }
 
 .right {
@@ -24,7 +24,9 @@
 }
 
 .weekday {
-  font-weight: 600;
+  font-family: var(--font-stack-head);
+  font-size: var(--fs-base);
+  font-weight: 800;
 }
 
 .holiday {
@@ -61,14 +63,14 @@
 
 .sum {
   margin: 0;
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.6;
-  color: var(--pencil);
+  color: color-mix(in srgb, var(--ink) 72%, var(--leaf));
 }
 
 .sum b {
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .loading {

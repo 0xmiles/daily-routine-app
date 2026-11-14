@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo, IBM_Plex_Sans_KR } from "next/font/google";
+import { Archivo, Hahmlet } from "next/font/google";
 import { THEME_COLORS } from "@/ui/theme";
+// Pretendard: Korean body text. Dynamic subsets, so a page only downloads the slices it uses.
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "@/ui/tokens.css";
 import "./globals.css";
 
@@ -12,11 +14,10 @@ const archivo = Archivo({
   display: "swap",
 });
 
-// IBM Plex Sans KR: Korean body text.
-const plexSansKr = IBM_Plex_Sans_KR({
-  weight: ["400", "500", "600", "700"],
+// Hahmlet: headings (variable weight). Korean slices load on demand.
+const hahmlet = Hahmlet({
   subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-head",
   display: "swap",
 });
 
@@ -37,7 +38,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ko" className={`${archivo.variable} ${plexSansKr.variable}`}>
+    <html lang="ko" className={`${archivo.variable} ${hahmlet.variable}`}>
       <body>{children}</body>
     </html>
   );

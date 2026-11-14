@@ -11,10 +11,20 @@
   width: min(380px, 100%);
 }
 
+.mark {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  transform: rotate(-4deg);
+}
+
 .name {
   margin: 0;
-  font-size: 40px;
-  font-weight: 700;
+  font-family: var(--font-stack-head);
+  font-size: 44px;
+  font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.04em;
 }

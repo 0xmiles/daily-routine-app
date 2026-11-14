@@ -209,7 +209,9 @@ export function TodayPage({ initialDate, today: serverToday }: TodayPageProps) {
           </button>
         </div>
       </div>
-      <div className={styles.perf} aria-hidden="true" />
+      <div className={styles.perf} aria-hidden="true">
+        <i />
+      </div>
 
       <section className={styles.eventsCol} aria-labelledby={eventsHeading}>
         <div className={styles.secHead}>

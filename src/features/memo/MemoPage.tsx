@@ -402,7 +402,9 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
 
         {ready && state.blocks.length === 0 && (
           <div className={styles.empty}>
-            <FileIcon />
+            <span className={styles.emptyMark} aria-hidden="true">
+              <FileIcon size={28} strokeWidth={1.7} />
+            </span>
             <p className={styles.emptyTitle}>아직 메모가 없어요.</p>
             <p className={styles.emptyText}>첫 줄이 메모 이름이 돼요. 일정에서 메모를 쓰면 여기에 함께 모여요.</p>
             <Button onClick={() => newFile()}>새 메모 쓰기</Button>
@@ -424,9 +426,13 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
                     onClick={(event) => onRowClick(event, block.key)}
                   >
                     <span className={styles.fileTitle}>
-                      {block.eventRef && (
-                        <span className={styles.fileIcon} aria-label="일정 메모">
+                      {block.eventRef ? (
+                        <span className={cx(styles.fileIcon, styles.eventIcon)} role="img" aria-label="일정 메모">
                           <CalendarIcon size={13} />
+                        </span>
+                      ) : (
+                        <span className={styles.fileIcon} aria-hidden="true">
+                          <FileIcon size={14} strokeWidth={2} />
                         </span>
                       )}
                       <span className={styles.fileName}>{title}</span>

@@ -26,6 +26,14 @@
   letter-spacing: -0.01em;
 }
 
+.monthUnit {
+  margin-left: 3px;
+  font-family: var(--font-stack-head);
+  font-size: 0.62em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
 .arrows {
   display: flex;
   align-items: center;
@@ -133,8 +141,9 @@
   align-items: baseline;
   gap: 8px;
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
+  font-family: var(--font-stack-head);
+  font-size: var(--fs-lg);
+  font-weight: 800;
 }
 
 .holiday {

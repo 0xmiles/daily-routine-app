@@ -1,10 +1,12 @@
 /* 통장 한 면: --passbook paper, faint ruled lines, narrow tabular numbers. */
 
+/* The mint top edge is the passbook's cover showing above the page. */
 .passbook {
   position: relative;
   margin: 0 -4px;
-  padding: 10px 10px 8px;
-  border-radius: 6px;
+  padding: 12px 10px 8px;
+  border-top: 6px solid var(--mint);
+  border-radius: 10px;
   background: var(--passbook);
   color: var(--ink);
 }

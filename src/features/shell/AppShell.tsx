@@ -157,7 +157,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className={cx(styles.shell, showTabs && styles.withTabs)}>
+    <div className={cx(styles.shell, showTabs && styles.withTabs)} data-section={section ?? undefined}>
       <a href="#main" className={styles.skip}>
         본문으로 건너뛰기
       </a>

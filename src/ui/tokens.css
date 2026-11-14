@@ -4,9 +4,15 @@
  * (The one exception is src/ui/theme.ts, which mirrors --paper/--ink for
  * <meta name="theme-color"> and the web manifest, where CSS vars can't be used.)
  *
- * Fonts come from next/font in src/app/layout.tsx:
- *   --font-num  Archivo (variable width; use font-stretch / font-variation-settings 'wdth')
- *   --font-body IBM Plex Sans KR 400/500/600/700
+ * Fonts (src/app/layout.tsx):
+ *   --font-num   Archivo (next/font; variable width — font-stretch / 'wdth') for dates and numbers
+ *   --font-head  Hahmlet (next/font; variable weight) for headings — the printed-calendar voice
+ *   body         Pretendard Variable (npm "pretendard", dynamic subsets) for everything you read and type
+ *
+ * Index colours (spec §9.4): each menu owns one colour, like the tabs on a planner.
+ * They are fills only and always carry dark ink (--on-index) in both themes,
+ * so contrast holds without per-colour text rules. --accent / --accent-soft /
+ * --accent-wash follow the current menu (set at the bottom of this file).
  */
 
 :root {
@@ -19,15 +25,34 @@
   --rule: #e3e3de; /* 줄: 구분선 */
   --sun: #d7263d; /* 일요일 빨강: 일요일·공휴일, 늦음, 오래된 잔액, 지금 시각 선 */
   --sat: #2d5bd7; /* 토요일 파랑: 토요일, 링크 */
-  --marker: #ffe76a; /* 형광펜: 오늘, 지금 쓰는 줄, 선택된 탭 (밑칠로만) */
-  --passbook: #e8f0ea; /* 통장 연두: 자산 화면의 통장 면 */
+  --marker: #ffe15a; /* 형광펜: 본문 속 오늘·지금 (글자 밑칠) */
+  --passbook: #e3f4ea; /* 통장 연두: 자산 화면의 통장 면 */
+
+  /* Index colours (fills; content on them is always --on-index). */
+  --lemon: #ffe15a; /* 할 일 */
+  --pink: #ffb5c8; /* 메모 */
+  --mint: #a5e4c0; /* 자산 */
+  --lilac: #cfc3ff; /* 설정 */
+  --on-index: #1f2533;
 
   /* Derived (not palette colors): overlays and floating surfaces. */
   --scrim: rgb(31 37 51 / 0.4);
   --shadow-float: 0 6px 16px rgb(31 37 51 / 0.25);
 
   --font-stack-num: var(--font-num), "Helvetica Neue", Arial, sans-serif;
-  --font-stack-body: var(--font-body), -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+  --font-stack-body: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    sans-serif;
+  --font-stack-head: var(--font-head), "Pretendard Variable", -apple-system, "Apple SD Gothic Neo", serif;
+
+  /* Type scale (16px body, ~1.2 steps). */
+  --fs-xs: 12px;
+  --fs-sm: 13.5px;
+  --fs-md: 15px;
+  --fs-base: 16px;
+  --fs-lg: 18px;
+  --fs-xl: 21px;
+  --fs-2xl: 26px;
+  --fs-3xl: 34px;
 
   /* Interaction layers (derived from ink, so they follow dark mode). */
   --hover: color-mix(in srgb, var(--ink) 6%, transparent);
@@ -79,12 +104,56 @@
     --rule: #384052;
     --sun: #ff5c6c;
     --sat: #7a9bff;
-    --marker: #7a6a12;
-    --passbook: #24302a;
+    --marker: rgb(242 208 75 / 0.42);
+    --passbook: #22332b;
+
+    --lemon: #f2d04b;
+    --pink: #f4a3b8;
+    --mint: #8ad4ad;
+    --lilac: #b9abf7;
 
     --scrim: rgb(0 0 0 / 0.55);
     --shadow-float: 0 6px 16px rgb(0 0 0 / 0.5);
   }
+}
+
+/* The current menu's index colour. :root:has() so sheets portalled to <body> follow it too. */
+:root {
+  --accent: var(--lemon);
+}
+
+:root:has([data-section="memo"]) {
+  --accent: var(--pink);
+}
+
+:root:has([data-section="assets"]) {
+  --accent: var(--mint);
+}
+
+:root:has([data-section="settings"]) {
+  --accent: var(--lilac);
+}
+
+:root {
+  --accent-soft: color-mix(in srgb, var(--accent) 42%, var(--paper));
+  --accent-wash: color-mix(in srgb, var(--accent) 16%, var(--paper));
+  /* The 일력 leaf on the today screen. */
+  --leaf: color-mix(in srgb, var(--lemon) 34%, var(--sheet));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Yellow over navy turns olive, so in the dark the leaf is plain sheet and
+       only its glued top edge keeps the lemon. */
+    --leaf: var(--sheet);
+  }
+}
+
+/* Headings in Hahmlet (for elements that are not styled in a module). */
+.headline {
+  font-family: var(--font-stack-head);
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 /* Numbers: dates, times, money. Archivo with aligned digits. */
@@ -107,7 +176,7 @@
   border: 0;
 }
 
-/* Highlighter underlay for "now / today / selected" (never as a button fill). */
+/* Highlighter underlay for "today / now" in running text. */
 .hl {
   background: linear-gradient(transparent 52%, var(--marker) 52%, var(--marker) 94%, transparent 94%);
   padding: 0 2px;

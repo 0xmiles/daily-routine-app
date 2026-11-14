@@ -19,8 +19,10 @@ export interface BottomTabsProps {
 }
 
 /**
- * Under 900px: 할 일 / 메모 / 자산 tabs, evenly spread, and a round ink +
- * button floating above the bar's right end (not part of the tab row).
+ * Under 900px: 할 일 / 메모 / 자산 tabs, evenly spread, and a + button
+ * floating above the bar's right end (not part of the tab row). The current
+ * tab wears its menu's index colour; the + button wears the colour of what it
+ * makes (a memo on 메모, otherwise a 할 일), like the kinds in QuickAdd.
  */
 export function BottomTabs({ pathname, onQuickAdd, className }: BottomTabsProps) {
   const current = sectionOf(pathname);
@@ -34,10 +36,13 @@ export function BottomTabs({ pathname, onQuickAdd, className }: BottomTabsProps)
               key={section}
               href={href}
               className={cx(styles.tab, on && styles.on)}
+              data-tab={section}
               aria-current={on ? "page" : undefined}
             >
-              <Icon size={22} strokeWidth={on ? 2.1 : 1.8} />
-              <span className={on ? "hl" : undefined}>{label}</span>
+              <span className={styles.pill}>
+                <Icon size={22} strokeWidth={on ? 2.1 : 1.8} />
+              </span>
+              <span>{label}</span>
             </Link>
           );
         })}
@@ -45,6 +50,7 @@ export function BottomTabs({ pathname, onQuickAdd, className }: BottomTabsProps)
       <button
         type="button"
         className={styles.fab}
+        data-kind={current === "memo" ? "memo" : "todo"}
         aria-label={current === "memo" ? "새 메모" : "빠른 추가"}
         onClick={onQuickAdd}
       >

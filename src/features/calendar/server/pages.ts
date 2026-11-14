@@ -31,7 +31,7 @@ function htmlPage({ status, heading, body, action, cookies = [] }: PageInput): R
   * { box-sizing: border-box; }
   body { margin: 0; min-height: 100dvh; display: grid; place-items: center; padding: 24px 20px;
     background: var(--paper); color: var(--ink);
-    font-family: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
     line-height: 1.6; letter-spacing: -0.01em; }
   main { width: min(420px, 100%); }
   h1 { margin: 0 0 10px; font-size: 21px; line-height: 1.4; font-weight: 700; }
