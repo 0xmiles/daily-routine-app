@@ -1,10 +1,11 @@
 /* The one loud thing on the screen is the big date (spec §5.7 rule 1), on a leaf
-   in the day's full colour. Everything on the leaf is --on-index; coloured words
-   (일요일, 토요일, 공휴일, 늦은 할 일) sit on small paper stickers so they stay legible. */
+   washed in the day's colour. Words on the leaf are --ink; coloured words
+   (일요일, 토요일, 공휴일, 늦은 할 일) sit on small paper stickers. The numeral is
+   --leaf-num (TodayPage): ink on light paper, the day's own colour on dark. */
 
 .leaf {
   padding: 4px 12px 14px;
-  color: var(--on-index);
+  color: var(--ink);
 }
 
 .ym {
@@ -60,9 +61,10 @@
   font-variant-numeric: proportional-nums;
   line-height: 0.8;
   letter-spacing: -0.06em;
+  color: var(--leaf-num, var(--ink));
 }
 
-/* Tone classes colour only the stickers; the numeral stays --on-index on the coloured leaf. */
+/* Tone classes colour only the stickers, never the numeral. */
 .pill.ink {
   color: var(--ink);
 }

@@ -121,8 +121,8 @@
      color-mix(in srgb, var(--hue) var(--tint-mix), var(--sheet)). --hue is set where
      the surface is, so the mix has to be written there too. */
   --tint-mix: 34%;
-  /* The 일력 leaf wears its day's pencil at full strength, in both schemes. */
-  --leaf-mix: 100%;
+  /* The 일력 leaf: a soft wash of its day's pencil, glued on with a full-colour band. */
+  --leaf-mix: 30%;
   /* What a selected row or the line being written mixes its pencil into. */
   --tint-base: var(--paper);
   /* A selected row, and the line being written in a memo. */
@@ -130,13 +130,21 @@
   --line-mix: 42%;
 }
 
+/* On a wide screen the leaf is a full-height column, so its wash is fainter still. */
+@media (min-width: 900px) {
+  :root {
+    --leaf-mix: 18%;
+  }
+}
+
 /* On black, a pencil mixed down turns muddy (yellow → olive, orange → brown, blue → navy).
    Dark surfaces therefore stay faint, selected rows are plain lifted grey, and the full
-   colour shows on the leaf, tiles, edges and buttons instead. */
+   colour shows on tiles, edges, buttons and the leaf's band and numeral instead. */
 :root[data-scheme="dark"] {
   /* Lifted off black first: blue over black at low strength reads as navy. */
   --tint-base: color-mix(in srgb, var(--ink) 13%, var(--paper));
   --tint-mix: 14%;
+  --leaf-mix: 0%;
   --select-mix: 0%;
   --line-mix: 0%;
 }
@@ -145,6 +153,7 @@
   :root:not([data-scheme]) {
     --tint-base: color-mix(in srgb, var(--ink) 13%, var(--paper));
     --tint-mix: 14%;
+    --leaf-mix: 0%;
     --select-mix: 0%;
     --line-mix: 0%;
   }

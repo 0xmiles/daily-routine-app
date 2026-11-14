@@ -1,6 +1,8 @@
 .page {
-  /* --hue is the day's pencil (set inline from the weekday): every leaf in the pad is a different colour. */
+  /* --hue is the day's pencil (set inline from the weekday): every leaf in the pad is a different colour.
+     The leaf takes it softly (--leaf-mix); the band at the top carries it in full. */
   --leaf: color-mix(in srgb, var(--hue) var(--leaf-mix), var(--sheet));
+  --leaf-num: var(--ink);
   display: flex;
   flex-direction: column;
   padding-top: 10px;
@@ -8,14 +10,21 @@
   touch-action: pan-y;
 }
 
+/* On black the leaf stays plain lifted grey (even a faint wash turns 금 olive and 화 brown);
+   the band and the numeral wear the colour instead. The numeral is
+   lifted a little toward the ink so it clears 3:1 on the leaf in every theme. */
+:global(:root[data-scheme="dark"]) .page {
+  --leaf-num: color-mix(in srgb, var(--hue) 82%, var(--ink));
+}
+
 /* ---------- 일력 page ---------- */
 
-/* The leaf is a sheet in the day's colour, glued at the top; the perforation below is its torn edge. */
+/* The leaf is a sheet washed in the day's colour, glued at the top; the perforation below is its torn edge. */
 .leafCol {
   position: relative;
   margin: 0 8px;
   padding-top: 10px;
-  border-top: 6px solid var(--hue);
+  border-top: 8px solid var(--hue);
   border-radius: 20px 20px 0 0;
   background: var(--leaf);
   transition:
@@ -41,12 +50,12 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: var(--on-index);
+  color: var(--ink);
   cursor: pointer;
 }
 
 .navButton:hover {
-  background: color-mix(in srgb, var(--on-index) 10%, transparent);
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 .backToday {
@@ -55,7 +64,7 @@
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--on-index);
+  color: var(--ink);
   font-size: 13px;
   font-weight: 700;
   text-decoration: underline;
@@ -64,7 +73,7 @@
 }
 
 .backToday:hover {
-  background: color-mix(in srgb, var(--on-index) 10%, transparent);
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 .addTodo:focus-visible {
@@ -72,10 +81,10 @@
   outline-offset: 2px;
 }
 
-/* On the coloured leaf the ring is the leaf's own ink. */
+/* On the leaf the ring is the leaf's own ink. */
 .navButton:focus-visible,
 .backToday:focus-visible {
-  outline: 2px solid var(--on-index);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
 
@@ -95,7 +104,7 @@
   top: 0;
   left: 14px;
   right: 14px;
-  border-top: 1.6px dashed color-mix(in srgb, var(--on-index) 35%, var(--leaf));
+  border-top: 1.6px dashed color-mix(in srgb, var(--ink) 35%, var(--leaf));
 }
 
 .perf::before,
@@ -226,7 +235,7 @@
     margin: 0;
     padding-top: 0;
     border-radius: 0;
-    border-right: 1.6px dashed color-mix(in srgb, var(--on-index) 30%, var(--leaf));
+    border-right: 1.6px dashed color-mix(in srgb, var(--ink) 30%, var(--leaf));
   }
 
   .dayNav {
