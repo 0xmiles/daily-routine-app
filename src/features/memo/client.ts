@@ -1,4 +1,5 @@
-import type { EventRef, MemoBlock } from "@/shared/contracts";
+import type { EventRef, MemoBlock, MemoFolder } from "@/shared/contracts";
+import type { Hue } from "@/ui/hues";
 
 // Browser client for /api/memo/*. Safe to import from any client component.
 //
@@ -18,6 +19,20 @@ export class MemoApiError extends Error {
 export interface NewMemoBlock {
   content?: string;
   eventRef?: EventRef;
+  /** Folder to make it in (a folder that no longer exists means outside any folder). */
+  folderId?: string | null;
+  hue?: Hue | null;
+}
+
+/** Where a memo sits: its folder (null = outside) and its own colour (null = automatic). */
+export interface Placement {
+  folderId?: string | null;
+  hue?: Hue | null;
+}
+
+export interface MemoList {
+  blocks: MemoBlock[];
+  folders: MemoFolder[];
 }
 
 export type SaveBlockResult = { ok: true; block: MemoBlock } | { ok: false; current: MemoBlock };
@@ -44,11 +59,17 @@ async function fail(res: Response): Promise<never> {
   throw new MemoApiError(res.status, message);
 }
 
-/** GET /api/memo/blocks — all blocks, newest first. */
-export async function fetchBlocks(): Promise<MemoBlock[]> {
+/** GET /api/memo/blocks — all blocks (newest first) and all folders. */
+export async function fetchMemos(): Promise<MemoList> {
   const res = await call("/api/memo/blocks");
   if (!res.ok) return fail(res);
-  return ((await res.json()) as { blocks: MemoBlock[] }).blocks;
+  const body = (await res.json()) as { blocks: MemoBlock[]; folders?: MemoFolder[] };
+  return { blocks: body.blocks, folders: body.folders ?? [] };
+}
+
+/** GET /api/memo/blocks — all blocks, newest first. */
+export async function fetchBlocks(): Promise<MemoBlock[]> {
+  return (await fetchMemos()).blocks;
 }
 
 /** POST /api/memo/blocks. With an eventRef that already has a block, resolves to that existing block. */
@@ -82,6 +103,33 @@ export async function deleteBlock(id: string, baseVersion?: number): Promise<Del
   if (res.status === 409) return { ok: false, current: ((await res.json()) as { current: MemoBlock }).current };
   if (!res.ok) return fail(res);
   return { ok: true };
+}
+
+/** PATCH /api/memo/blocks/[id] — move a memo and/or set its colour. Doesn't change its version. */
+export async function placeBlock(id: string, patch: Placement): Promise<MemoBlock> {
+  const res = await call(`/api/memo/blocks/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) });
+  if (!res.ok) return fail(res);
+  return (await res.json()) as MemoBlock;
+}
+
+/** POST /api/memo/folders. Without `hue` the server picks the first pencil no folder uses. */
+export async function createFolder(name: string, hue?: Hue): Promise<MemoFolder> {
+  const res = await call("/api/memo/folders", { method: "POST", body: JSON.stringify(hue ? { name, hue } : { name }) });
+  if (!res.ok) return fail(res);
+  return (await res.json()) as MemoFolder;
+}
+
+/** PATCH /api/memo/folders/[id] — rename and/or recolour. */
+export async function updateFolder(id: string, patch: { name?: string; hue?: Hue }): Promise<MemoFolder> {
+  const res = await call(`/api/memo/folders/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) });
+  if (!res.ok) return fail(res);
+  return (await res.json()) as MemoFolder;
+}
+
+/** DELETE /api/memo/folders/[id] — its memos move out of it; none is deleted. */
+export async function deleteFolder(id: string): Promise<void> {
+  const res = await call(`/api/memo/folders/${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) return fail(res);
 }
 
 /** GET /api/memo/event-keys — eventKeys (`${calendarId}:${eventId}`) that already have a memo. */

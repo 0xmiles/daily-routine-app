@@ -1,3 +1,5 @@
+import type { Hue } from "@/ui/hues";
+
 // Unsaved memo text kept on this device (spec §5.3 "메모 유실 금지").
 //
 // Every edit is written here before the debounced save; a successful save
@@ -19,6 +21,9 @@ export interface MemoDraft {
   createdAt: string;
   /** When this draft was written (ISO). */
   savedAt: string;
+  /** Folder / own colour of a memo not on the server yet (older drafts have neither: null). */
+  folderId?: string | null;
+  hue?: Hue | null;
 }
 
 type DraftMap = Record<string, MemoDraft>;

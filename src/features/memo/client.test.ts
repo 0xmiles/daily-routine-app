@@ -9,6 +9,8 @@ const block: MemoBlock = {
   updatedAt: "2026-11-14T00:00:00.000Z",
   version: 1,
   eventRef: null,
+  folderId: null,
+  hue: null,
 };
 
 const ref: EventRef = {

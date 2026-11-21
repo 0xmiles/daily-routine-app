@@ -75,7 +75,7 @@ interface Call {
 const NOW = "2026-11-14T00:12:00.000Z";
 
 function block(overrides: Partial<MemoBlock> = {}): MemoBlock {
-  return { id: "b1", content: "내 메모", createdAt: NOW, updatedAt: NOW, version: 1, eventRef: null, ...overrides };
+  return { id: "b1", content: "내 메모", createdAt: NOW, updatedAt: NOW, version: 1, eventRef: null, folderId: null, hue: null, ...overrides };
 }
 
 const eventRef: EventRef = {
