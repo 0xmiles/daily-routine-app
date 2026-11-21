@@ -4,6 +4,7 @@ import { EditorView, runScopeHandlers } from "@codemirror/view";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { boldSpans, toggleBold } from "./bold";
 import { currentLineDecorations } from "./currentLine";
+import { cycleHeading } from "./heading";
 import { continueList, indentLines, outdentLines } from "./indent";
 import { memoExtensions } from "./index";
 
@@ -255,3 +256,81 @@ describe("block navigation", () => {
     expect(onBoundary).not.toHaveBeenCalled();
   });
 });
+
+describe("headings", () => {
+  it("the 제목 tool cycles plain → # → ## → ### → plain and keeps the cursor after the marks", () => {
+    let s = run(cycleHeading, stateOf("할 일|")).state;
+    expect(marked(s)).toBe("# 할 일|");
+    s = run(cycleHeading, s).state;
+    expect(marked(s)).toBe("## 할 일|");
+    s = run(cycleHeading, s).state;
+    expect(marked(s)).toBe("### 할 일|");
+    s = run(cycleHeading, s).state;
+    expect(marked(s)).toBe("할 일|");
+    expect(marked(run(cycleHeading, stateOf("|할 일")).state)).toBe("# |할 일");
+  });
+
+  it("the 제목 tool drops an indent or bullet", () => {
+    expect(marked(run(cycleHeading, stateOf("  - 항목|")).state)).toBe("# 항목|");
+    expect(marked(run(cycleHeading, stateOf("    들여쓴 줄|")).state)).toBe("# 들여쓴 줄|");
+    expect(marked(run(cycleHeading, stateOf("1. 첫째|")).state)).toBe("# 첫째|");
+  });
+
+  it("Enter at the end of a heading starts a plain line", () => {
+    expect(marked(run(continueList, stateOf("# 제목|")).state)).toBe("# 제목\n|");
+    expect(marked(run(continueList, stateOf("## 앞|뒤")).state)).toBe("## 앞\n|뒤");
+  });
+
+  it("draws headings, hides # away from the cursor and shows it on the cursor line", () => {
+    const { view } = makeView("본문\n# 큰 제목\n## 작은 제목", {}, 0);
+    view.focus();
+    view.dispatch({ selection: { anchor: 1 } });
+    const h1 = view.contentDOM.querySelector(".cm-memo-h1")!;
+    expect(h1.textContent).toBe("큰 제목");
+    expect(view.contentDOM.querySelector(".cm-memo-h2")?.textContent).toBe("작은 제목");
+    expect(view.contentDOM.querySelectorAll(".cm-memo-mark")).toHaveLength(0);
+
+    view.dispatch({ selection: { anchor: view.state.doc.line(2).to } });
+    const line2 = view.contentDOM.querySelector(".cm-memo-h1")!;
+    expect(line2.querySelector(".cm-memo-mark")?.textContent).toBe("# ");
+    expect(line2.textContent).toBe("# 큰 제목");
+  });
+
+  it("hides every mark while the editor isn't focused", () => {
+    const { view } = makeView("# 제목\n---", {}, 2);
+    expect(view.contentDOM.querySelectorAll(".cm-memo-mark")).toHaveLength(0);
+    expect(view.contentDOM.querySelector(".cm-memo-h1")?.textContent).toBe("제목");
+  });
+
+  it("keeps a titled memo's first line at the name's size and hides its #", () => {
+    const { view } = makeView("# 이름\n# 제목", { titled: true }, 0);
+    const first = view.contentDOM.querySelector(".cm-line")!;
+    expect(first.classList.contains("cm-memo-title")).toBe(true);
+    expect(first.classList.contains("cm-memo-h1")).toBe(false);
+    expect(first.textContent).toBe("이름");
+    expect(view.contentDOM.querySelectorAll(".cm-memo-h1")).toHaveLength(1);
+  });
+});
+
+describe("dividers", () => {
+  it("draws --- as a rule away from the cursor and as text on the cursor line", () => {
+    const { view } = makeView("위\n---\n아래", {}, 0);
+    view.focus();
+    view.dispatch({ selection: { anchor: 0 } });
+    const rule = view.contentDOM.querySelector(".cm-memo-rule")!;
+    expect(rule.querySelector(".cm-memo-hr")).not.toBeNull();
+    expect(rule.textContent).toBe("");
+
+    view.dispatch({ selection: { anchor: view.state.doc.line(2).from } });
+    const shown = view.contentDOM.querySelector(".cm-memo-rule")!;
+    expect(shown.querySelector(".cm-memo-hr")).toBeNull();
+    expect(shown.textContent).toBe("---");
+    expect(view.state.doc.toString()).toBe("위\n---\n아래");
+  });
+
+  it("leaves bullets and short dashes alone", () => {
+    const { view } = makeView("- 항목\n--\n- --", {}, 0);
+    expect(view.contentDOM.querySelector(".cm-memo-rule")).toBeNull();
+  });
+});
+

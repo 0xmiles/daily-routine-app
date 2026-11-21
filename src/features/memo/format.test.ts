@@ -23,6 +23,20 @@ describe("memo file names and previews", () => {
     expect(plainLine("-")).toBe("");
   });
 
+  it("plainLine drops a heading's # and turns a --- divider into nothing", () => {
+    expect(plainLine("## 회의")).toBe("회의");
+    expect(plainLine("# **급함**")).toBe("급함");
+    expect(plainLine("#### 넷")).toBe("#### 넷");
+    expect(plainLine("---")).toBe("");
+    expect(plainLine("-----  ")).toBe("");
+  });
+
+  it("names a memo after its first text line, past dividers and without #", () => {
+    const memo = { content: "---\n# 이름\n본문\n---\n## 둘째", eventRef: null };
+    expect(memoTitle(memo)).toBe("이름");
+    expect(memoPreview(memo)).toBe("본문 둘째");
+  });
+
   it("the first line with text is the title; the rest is the preview", () => {
     const memo = { content: "\n장보기\n- 우유\n\n  - **달걀**", eventRef: null };
     expect(memoTitle(memo)).toBe("장보기");

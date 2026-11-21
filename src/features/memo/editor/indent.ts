@@ -30,7 +30,7 @@ function nextMarker(marker: string): string {
 }
 
 /** Lines touched by the selection (a range ending at a line start does not touch that line). */
-function selectedLines(state: EditorState): Line[] {
+export function selectedLines(state: EditorState): Line[] {
   const lines: Line[] = [];
   let last = -1;
   for (const range of state.selection.ranges) {

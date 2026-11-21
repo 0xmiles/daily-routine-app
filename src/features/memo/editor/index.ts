@@ -5,10 +5,13 @@ import { EditorView, keymap } from "@codemirror/view";
 import { boldDecorations, deleteBackwardAroundBold, toggleBold } from "./bold";
 import { currentLineHighlight } from "./currentLine";
 import { indentGuides } from "./guides";
+import { headings } from "./heading";
 import { INDENT, continueList, indentLines, outdentLines } from "./indent";
+import { dividers } from "./rule";
 import { firstLineTitle } from "./title";
 
 export { boldSpans, toggleBold } from "./bold";
+export { cycleHeading } from "./heading";
 export { continueList, indentLines, outdentLines } from "./indent";
 
 export interface MemoEditorOptions {
@@ -67,6 +70,26 @@ const memoTheme = EditorView.theme({
     letterSpacing: "-0.02em",
     paddingBottom: "0.35em",
   },
+  // Headings, smaller than the memo's name (1.6em) and larger than the text.
+  ".cm-memo-h1, .cm-memo-h2, .cm-memo-h3": {
+    fontFamily: "var(--font-stack-head)",
+    fontWeight: "700",
+    lineHeight: "1.45",
+    letterSpacing: "-0.015em",
+    paddingTop: "0.3em",
+  },
+  ".cm-memo-h1": { fontSize: "1.4em" },
+  ".cm-memo-h2": { fontSize: "1.2em" },
+  ".cm-memo-h3": { fontSize: "1.08em" },
+  // `#` / `---` shown as text on the line being edited.
+  ".cm-memo-mark": { color: "var(--pencil)" },
+  ".cm-memo-hr": {
+    display: "inline-block",
+    width: "100%",
+    height: "1px",
+    verticalAlign: "middle",
+    backgroundColor: "var(--rule)",
+  },
   ".cm-memo-bullet": { color: "var(--pencil)" },
   ".cm-memo-guide": {
     display: "inline-block",
@@ -81,7 +104,8 @@ const memoTheme = EditorView.theme({
 /**
  * Everything the memo editor needs on top of a bare EditorView: history, the
  * default keymap, 2-space Tab indent, list-continuing Enter, Mod-b bold with
- * hidden markers, indent guides, current-line highlight and block navigation.
+ * hidden markers, `#` headings and `---` dividers, indent guides, current-line
+ * highlight and block navigation.
  */
 export function memoExtensions(opts: MemoEditorOptions): Extension[] {
   return [
@@ -110,6 +134,8 @@ export function memoExtensions(opts: MemoEditorOptions): Extension[] {
     boldDecorations,
     indentGuides,
     currentLineHighlight,
+    headings(opts.titled ?? false),
+    dividers,
     opts.titled ? firstLineTitle : [],
     memoTheme,
   ];

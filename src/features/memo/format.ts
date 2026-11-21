@@ -1,5 +1,6 @@
 import type { EventRef } from "@/shared/contracts";
 import { addDays, formatKoreanDate, seoulParts } from "@/shared/time";
+import { headingPrefixLength, isRuleLine } from "./syntax";
 
 // Text for the event label on an event memo block.
 
@@ -43,9 +44,15 @@ export function formatEventWhen(ref: EventRef): string {
 const LINE_MARKER = /^\s*(?:[-*]\s+|\d+[.)]\s+)?/;
 const MAX_PREVIEW = 140;
 
-/** A memo line as plain text: no indent, list marker or `**` bold markers. */
+/** A memo line as plain text: no indent, list marker, `# ` or `**` bold markers; a `---` divider is "". */
 export function plainLine(line: string): string {
-  return line.replace(LINE_MARKER, "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/^[-*]$/, "").trim();
+  if (isRuleLine(line)) return "";
+  return line
+    .slice(headingPrefixLength(line))
+    .replace(LINE_MARKER, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/^[-*]$/, "")
+    .trim();
 }
 
 interface MemoText {
