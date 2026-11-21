@@ -20,3 +20,12 @@ export function writePref(key: string, value: unknown): void {
     // Ignore: the preference just won't be remembered on this device.
   }
 }
+
+/** The stored JSON text of a preference (null if unset or storage is unavailable). */
+export function readPrefRaw(key: string): string | null {
+  try {
+    return window.localStorage.getItem(PREFIX + key);
+  } catch {
+    return null;
+  }
+}

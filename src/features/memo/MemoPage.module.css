@@ -238,6 +238,131 @@
   color: var(--sun);
 }
 
+/* ---------- folders ---------- */
+
+.tree {
+  margin: 0;
+  padding: 0 calc(var(--gutter) - 10px);
+  list-style: none;
+}
+
+.folder + .folder {
+  margin-top: 2px;
+}
+
+.folderRow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-radius: var(--radius-md);
+}
+
+/* The open memo is inside this closed folder. */
+.folderRow[data-current] {
+  background: color-mix(in srgb, var(--hue) var(--select-mix), var(--tint-base));
+}
+
+.folderToggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: var(--tap);
+  padding: 0 6px 0 2px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  transition: background-color var(--dur-fast) ease-out;
+}
+
+.folderToggle:hover {
+  background: var(--hover);
+}
+
+.folderToggle:active {
+  background: var(--press);
+}
+
+.chevron {
+  display: inline-grid;
+  flex: none;
+  color: var(--pencil);
+  transition: transform var(--dur-fast) ease-out;
+}
+
+.folderToggle[aria-expanded="true"] .chevron {
+  transform: rotate(90deg);
+}
+
+.folderIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--hue);
+  color: var(--on-index);
+}
+
+.folderName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folderCount {
+  flex: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pencil);
+}
+
+.folderTool {
+  min-width: 40px;
+  color: var(--pencil);
+}
+
+.folderTool:hover {
+  color: var(--ink);
+}
+
+/* Memos inside a folder sit under its name. */
+.files.folderFiles {
+  padding: 0 0 4px 16px;
+}
+
+.folderEmpty {
+  margin: 0 0 6px;
+  padding: 4px 10px 8px 50px;
+  font-size: 13.5px;
+  color: var(--pencil);
+}
+
+/* Memos outside any folder, under the folders. */
+.files.looseFiles {
+  position: relative;
+  margin-top: 6px;
+  padding-top: 6px;
+}
+
+.files.looseFiles::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: calc(var(--gutter) - 10px + 10px);
+  right: calc(var(--gutter) - 10px + 10px);
+  height: 1px;
+  background: var(--rule);
+}
+
+/* ---------- empty ---------- */
+
 .empty {
   display: flex;
   flex-direction: column;
@@ -379,20 +504,78 @@
   font-weight: 600;
 }
 
+/* ◧: folds the list away (wide screens only). */
+.listToggle {
+  display: none;
+}
+
+/* 폴더와 색: the open memo's folder and colour. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 44vw;
+  height: 32px;
+  margin-left: 4px;
+  padding: 0 11px 0 9px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--hue) 28%, var(--tint-base));
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: background-color var(--dur-fast) ease-out;
+}
+
+.chip:hover {
+  background: color-mix(in srgb, var(--hue) 42%, var(--tint-base));
+}
+
+.chipDot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--hue);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 18%, transparent);
+}
+
+.chipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.textSize {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .fileStatusText {
+  min-width: 0;
   margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   padding: 0 6px;
   font-size: 12.5px;
   color: var(--pencil);
 }
 
+/*
+ * Room under the text: half a screen, so the last line can be brought up to
+ * the middle (and above the keyboard tool bar). Clicking it puts the cursor at
+ * the end (MemoPage).
+ */
 .doc {
-  padding: 16px var(--memo-gutter) 120px;
+  padding: 16px var(--memo-gutter) max(50dvh, 160px);
+  cursor: text;
 }
 
-/* Room to scroll the last lines above the keyboard tool bar. */
 .doc[data-toolbar] {
-  padding-bottom: 160px;
+  padding-bottom: max(50dvh, 200px);
 }
 
 .stamp {
@@ -405,10 +588,12 @@
   margin-bottom: 18px;
 }
 
+/* --memo-scale is the 글씨 크기 picked on this device (never under 1 on phones). */
 .editor {
   margin: 0 calc(-1 * var(--memo-gutter));
-  font-size: 16.5px; /* ≥16px keeps iOS from zooming in while typing */
+  font-size: calc(16.5px * var(--memo-scale, 1)); /* ≥16px keeps iOS from zooming in while typing */
   color: var(--ink);
+  cursor: auto;
 }
 
 .paneEmpty {
@@ -489,6 +674,29 @@
     display: inline-flex;
   }
 
+  .listToggle {
+    display: inline-flex;
+    margin-right: 2px;
+  }
+
+  .tree {
+    padding: 0 8px;
+  }
+
+  .files.looseFiles::before {
+    left: 18px;
+    right: 18px;
+  }
+
+  /* List folded away: the memo takes the whole width (it keeps its max width, centred). */
+  .page[data-list="closed"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page[data-list="closed"] .listPane {
+    display: none;
+  }
+
   .filePane {
     overflow-y: auto;
   }
@@ -523,14 +731,17 @@
   }
 
   .editor {
-    font-size: 16px;
+    font-size: calc(16px * var(--memo-scale, 1));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .file,
   .iconButton,
-  .searchBox {
+  .searchBox,
+  .folderToggle,
+  .chevron,
+  .chip {
     transition: none;
   }
 }

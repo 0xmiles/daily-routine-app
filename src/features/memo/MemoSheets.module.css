@@ -1,0 +1,236 @@
+/* Contents of the memo sheets: new folder, folder menu, 폴더와 색, 글씨 크기. */
+
+.section + .section {
+  margin-top: 20px;
+}
+
+.sectionTitle {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pencil);
+}
+
+.text {
+  margin: 0 0 18px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.error {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--sun);
+}
+
+/* ---------- name field ---------- */
+
+.field {
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: var(--tap);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  font-size: 16px; /* ≥16px keeps iOS from zooming in */
+  color: var(--ink);
+}
+
+.input:focus {
+  outline: none;
+  box-shadow:
+    inset 0 0 0 1.5px var(--ink),
+    0 0 0 4px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.danger {
+  background: var(--sun);
+  color: #fff;
+}
+
+.deleteRow {
+  margin-top: 24px;
+}
+
+/* ---------- folder choices ---------- */
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 -10px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  text-align: left;
+}
+
+.option:hover {
+  background: var(--hover);
+}
+
+.option[aria-checked="true"] {
+  font-weight: 700;
+  background: color-mix(in srgb, var(--hue) var(--select-mix), var(--tint-base));
+}
+
+.optionIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--hue);
+  color: var(--on-index);
+}
+
+.optionNone {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--rule);
+  color: var(--pencil);
+}
+
+.optionName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionCheck {
+  display: inline-grid;
+  margin-left: auto;
+}
+
+/* ---------- colour swatches ---------- */
+
+/* Seven 44px swatches fit in one row on a 390px phone. */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* The "automatic" choice gets a row of its own above the seven pencils. */
+.swatchBreak {
+  flex-basis: 100%;
+  height: 2px;
+}
+
+.swatch {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hue);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 12%, transparent);
+  color: var(--on-index);
+}
+
+.swatch[aria-checked="true"],
+.auto[aria-checked="true"] {
+  box-shadow:
+    0 0 0 2px var(--sheet),
+    0 0 0 4px var(--ink);
+}
+
+.auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--tap);
+  padding: 0 14px 0 7px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--rule);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.autoDot {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--hue);
+}
+
+/* ---------- 글씨 크기 ---------- */
+
+.sizes {
+  display: flex;
+  gap: 6px;
+}
+
+.size {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  min-height: 84px;
+  padding: 10px 4px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--rule);
+  color: var(--ink);
+}
+
+.size:hover {
+  background: var(--hover);
+}
+
+.size[aria-checked="true"] {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.sizeSample {
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sizeLabel {
+  font-size: 12px;
+  color: var(--pencil);
+  white-space: nowrap;
+}
+
+.sizeNote {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pencil);
+}

@@ -2,7 +2,7 @@ import { EditorView } from "@codemirror/view";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { EventRef, MemoBlock } from "@/shared/contracts";
+import type { EventRef, MemoBlock, MemoFolder } from "@/shared/contracts";
 import { stashNewMemoTitle } from "@/features/shell/events";
 import { readDrafts } from "./draft";
 import { MemoPage } from "./MemoPage";
@@ -100,12 +100,26 @@ function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
 }
 
-function serve(blocks: MemoBlock[], extra: Record<string, Handler> = {}) {
+function folder(overrides: Partial<MemoFolder> = {}): MemoFolder {
+  return { id: "f1", name: "회사", hue: "tangerine", createdAt: NOW, updatedAt: NOW, ...overrides };
+}
+
+function serve(blocks: MemoBlock[], extra: Record<string, Handler> = {}, folders: MemoFolder[] = []) {
   let n = 100;
   routes = {
-    "GET /api/memo/blocks": () => jsonResponse({ blocks }),
+    "GET /api/memo/blocks": () => jsonResponse({ blocks, folders }),
     "POST /api/memo/blocks": ({ body }) =>
-      jsonResponse(block({ id: `b${n++}`, content: String(body?.content ?? ""), version: 1, createdAt: new Date().toISOString() }), 201),
+      jsonResponse(
+        block({
+          id: `b${n++}`,
+          content: String(body?.content ?? ""),
+          version: 1,
+          createdAt: new Date().toISOString(),
+          folderId: (body?.folderId as string | undefined) ?? null,
+          hue: (body?.hue as MemoBlock["hue"] | undefined) ?? null,
+        }),
+        201,
+      ),
     "DELETE /api/memo/blocks/b1": () => new Response(null, { status: 204 }),
     ...extra,
   };
@@ -434,3 +448,225 @@ describe("MemoPage (files)", () => {
     expect(screen.getByRole("button", { name: "메모 다시 불러오기" })).toBeTruthy();
   });
 });
+
+// ---- folders, colours and view settings ----------------------------------------------
+
+const page = () => document.querySelector<HTMLElement>("[data-list]")!;
+const LATER = "2026-11-14T01:00:00.000Z";
+
+describe("MemoPage folders", () => {
+  it("shows folders above the loose memos; a folder opens and closes and that is remembered", async () => {
+    serve([block({ id: "b2", content: "주간 회의", folderId: "f1", updatedAt: LATER }), block({ content: "장보기" })], {}, [folder()]);
+    render(<MemoPage />);
+    await waitFor(() => expect(fileNames()).toEqual(["주간 회의", "장보기"]));
+    const toggle = within(fileList()).getByRole("button", { name: "회사 폴더" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    await userEvent.click(toggle);
+    expect(fileNames()).toEqual(["장보기"]);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(JSON.parse(localStorage.getItem("daily:memo.closedFolders")!)).toEqual(["f1"]);
+    await userEvent.click(toggle);
+    expect(fileNames()).toEqual(["주간 회의", "장보기"]);
+  });
+
+  it("a memo in a folder takes the folder's colour unless it has its own", async () => {
+    serve([block({ id: "b2", content: "주간 회의", folderId: "f1", updatedAt: LATER }), block({ content: "1:1", folderId: "f1", hue: "sky" })], {}, [folder()]);
+    render(<MemoPage />);
+    const row = await within(fileList()).findByRole("link", { name: /주간 회의/ });
+    expect(row.style.getPropertyValue("--hue")).toBe("var(--tangerine)");
+    expect(within(fileList()).getByRole("link", { name: /1:1/ }).style.getPropertyValue("--hue")).toBe("var(--sky)");
+  });
+
+  it("+ on a folder row starts a memo in that folder", async () => {
+    serve([block()], {}, [folder()]);
+    render(<MemoPage />);
+    await userEvent.click(await within(fileList()).findByRole("button", { name: "‘회사’ 폴더에 새 메모" }));
+    const view = onlyEditor();
+    expect(view.state.doc.toString()).toBe("");
+    type(view, "새 회의");
+    await waitFor(() => expect(posts()).toHaveLength(1), { timeout: 2500 });
+    expect(posts()[0].body).toEqual({ content: "새 회의", folderId: "f1" });
+    await waitFor(() => expect(fileNames()).toEqual(["새 회의", "내 메모"]));
+  });
+
+  it("makes a new folder", async () => {
+    serve([block()], {
+      "POST /api/memo/folders": ({ body }) => jsonResponse(folder({ id: "f9", name: String(body?.name), hue: "pink" }), 201),
+    });
+    render(<MemoPage />);
+    await userEvent.click(await screen.findByRole("button", { name: "새 폴더" }));
+    const dialog = screen.getByRole("dialog", { name: "새 폴더" });
+    await userEvent.type(within(dialog).getByRole("textbox", { name: "폴더 이름" }), "  개인 ");
+    await userEvent.click(within(dialog).getByRole("button", { name: "만들기" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(calls.find((c) => c.method === "POST" && c.url.endsWith("/folders"))?.body).toEqual({ name: "개인" });
+    expect(within(fileList()).getByRole("button", { name: "개인 폴더" })).toBeTruthy();
+  });
+
+  it("deleting a folder asks first and keeps its memos, moved out", async () => {
+    serve([block({ folderId: "f1" })], { "DELETE /api/memo/folders/f1": () => new Response(null, { status: 204 }) }, [folder()]);
+    render(<MemoPage />);
+    await userEvent.click(await within(fileList()).findByRole("button", { name: "‘회사’ 폴더 메뉴" }));
+    await userEvent.click(within(screen.getByRole("dialog", { name: "‘회사’ 폴더" })).getByRole("button", { name: "폴더 지우기" }));
+    const confirm = screen.getByRole("dialog", { name: "‘회사’ 폴더를 지울까요?" });
+    expect(confirm.textContent).toContain("안에 든 메모 1개는 지우지 않고 폴더 밖으로 꺼내요.");
+    expect(deletes()).toHaveLength(0);
+    await userEvent.click(within(confirm).getByRole("button", { name: "폴더 지우기" }));
+    await waitFor(() => expect(deletes().map((c) => c.url)).toEqual(["/api/memo/folders/f1"]));
+    expect(within(fileList()).queryByRole("button", { name: "회사 폴더" })).toBeNull();
+    expect(fileNames()).toEqual(["내 메모"]);
+  });
+
+  it("a search opens a closed folder that has a match; Enter opens it", async () => {
+    localStorage.setItem("daily:memo.closedFolders", JSON.stringify(["f1"]));
+    mockMatchMedia(true);
+    serve([block({ id: "b2", content: "주간 회의", folderId: "f1" }), block({ content: "장보기" })], {}, [folder(), folder({ id: "f2", name: "빈 폴더" })]);
+    render(<MemoPage />);
+    await waitFor(() => expect(fileNames()).toEqual(["장보기"]));
+    await userEvent.type(screen.getByRole("searchbox", { name: "메모 찾기" }), "회의");
+    expect(fileNames()).toEqual(["주간 회의"]);
+    expect(within(fileList()).queryByRole("button", { name: "빈 폴더 폴더" })).toBeNull();
+    await userEvent.keyboard("{Enter}");
+    expect(window.location.search).toBe("?id=b2");
+  });
+
+  it("the 폴더와 색 chip moves the open memo and sets or clears its colour", async () => {
+    visit("?id=b1");
+    let current = block();
+    serve(
+      [block()],
+      {
+        "PATCH /api/memo/blocks/b1": ({ body }) => {
+          current = { ...current, ...(body as Partial<MemoBlock>) };
+          return jsonResponse(current);
+        },
+      },
+      [folder(), folder({ id: "f2", name: "개인", hue: "green" })],
+    );
+    render(<MemoPage />);
+    await userEvent.click(await screen.findByRole("button", { name: "폴더와 색: 폴더 없음" }));
+    const dialog = screen.getByRole("dialog", { name: "폴더와 색" });
+    const folders = within(dialog).getByRole("radiogroup", { name: "폴더" });
+    expect(within(folders).getAllByRole("radio").map((r) => r.textContent)).toEqual(["폴더 없음", "개인", "회사"]);
+    await userEvent.click(within(folders).getByRole("radio", { name: "개인" }));
+    await waitFor(() => expect(calls.filter((c) => c.method === "PATCH").map((c) => c.body)).toEqual([{ folderId: "f2" }]));
+    expect(screen.getByRole("button", { name: "폴더와 색: 개인" })).toBeTruthy();
+    expect(within(fileList()).getByRole("button", { name: "개인 폴더" })).toBeTruthy();
+
+    const colours = within(dialog).getByRole("radiogroup", { name: "메모 색" });
+    await userEvent.click(within(colours).getByRole("radio", { name: "하늘" }));
+    await userEvent.click(within(colours).getByRole("radio", { name: "폴더 색 따르기" }));
+    await waitFor(() =>
+      expect(calls.filter((c) => c.method === "PATCH").map((c) => c.body)).toEqual([{ folderId: "f2" }, { hue: "sky" }, { hue: null }]),
+    );
+    expect(puts()).toHaveLength(0);
+  });
+
+  it("a move that can't reach the server is undone with a notice", async () => {
+    visit("?id=b1");
+    serve([block()], { "PATCH /api/memo/blocks/b1": () => Promise.reject(new TypeError("Failed to fetch")) }, [folder()]);
+    render(<MemoPage />);
+    await userEvent.click(await screen.findByRole("button", { name: "폴더와 색: 폴더 없음" }));
+    await userEvent.click(screen.getByRole("radio", { name: "회사" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("인터넷에 연결되지 않아 메모를 옮기지 못했어요. 연결되면 다시 해 주세요.");
+    expect(screen.getByRole("button", { name: "폴더와 색: 폴더 없음" })).toBeTruthy();
+  });
+});
+
+describe("MemoPage view settings", () => {
+  it("⌥⌘S folds the list on wide screens and it stays folded; the button unfolds it", async () => {
+    serve([block()]);
+    const { unmount } = render(<MemoPage />);
+    await screen.findByText("내 메모", { selector: ".cm-line" });
+    expect(page().dataset.list).toBe("open");
+    fireEvent.keyDown(window, { key: "ß", code: "KeyS", metaKey: true, altKey: true });
+    expect(page().dataset.list).toBe("closed");
+    expect(localStorage.getItem("daily:memo.listOpen")).toBe("false");
+    unmount();
+
+    render(<MemoPage />);
+    await screen.findByText("내 메모", { selector: ".cm-line" });
+    expect(page().dataset.list).toBe("closed");
+    const toggle = screen.getByRole("button", { name: "메모 목록 펼치기" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    await userEvent.click(toggle);
+    expect(page().dataset.list).toBe("open");
+  });
+
+  it("⌘F while the list is folded unfolds it and goes to the search box", async () => {
+    localStorage.setItem("daily:memo.listOpen", "false");
+    serve([block()]);
+    render(<MemoPage />);
+    await screen.findByText("내 메모", { selector: ".cm-line" });
+    expect(page().dataset.list).toBe("closed");
+    fireEvent.keyDown(window, { key: "f", code: "KeyF", metaKey: true });
+    expect(page().dataset.list).toBe("open");
+    expect(document.activeElement).toBe(screen.getByRole("searchbox", { name: "메모 찾기" }));
+  });
+
+  it("phones ignore ⌥⌘S and a folded setting", async () => {
+    localStorage.setItem("daily:memo.listOpen", "false");
+    mockMatchMedia(true);
+    serve([block()]);
+    render(<MemoPage />);
+    await waitFor(() => expect(fileNames()).toEqual(["내 메모"]));
+    fireEvent.keyDown(window, { key: "s", code: "KeyS", metaKey: true, altKey: true });
+    expect(localStorage.getItem("daily:memo.listOpen")).toBe("false");
+  });
+
+  it("글씨 크기 sets the memo text scale on this device", async () => {
+    serve([block()]);
+    render(<MemoPage />);
+    await userEvent.click(await screen.findByRole("button", { name: "글씨 크기" }));
+    const sizes = within(screen.getByRole("dialog", { name: "글씨 크기" })).getByRole("radiogroup", { name: "글씨 크기" });
+    expect(within(sizes).getAllByRole("radio").map((r) => r.getAttribute("aria-label"))).toEqual(["작게", "보통", "조금 크게", "크게", "아주 크게"]);
+    expect(within(sizes).getByRole("radio", { name: "보통" }).getAttribute("aria-checked")).toBe("true");
+    await userEvent.click(within(sizes).getByRole("radio", { name: "크게" }));
+    expect(page().style.getPropertyValue("--memo-scale")).toBe("1.25");
+    expect(localStorage.getItem("daily:memo.fontScale")).toBe("1.25");
+  });
+
+  it("phones never go below 보통 (iOS would zoom in while typing)", async () => {
+    localStorage.setItem("daily:memo.fontScale", "0.875");
+    mockMatchMedia(true);
+    visit("?id=b1");
+    serve([block()]);
+    render(<MemoPage />);
+    await userEvent.click(await screen.findByRole("button", { name: "글씨 크기" }));
+    const sizes = screen.getByRole("radiogroup", { name: "글씨 크기" });
+    expect(within(sizes).queryByRole("radio", { name: "작게" })).toBeNull();
+    expect(within(sizes).getByRole("radio", { name: "보통" }).getAttribute("aria-checked")).toBe("true");
+    expect(page().style.getPropertyValue("--memo-scale")).toBe("1");
+  });
+
+  it("clicking the empty space under the text puts the cursor at the end", async () => {
+    mockMatchMedia(true);
+    visit("?id=b1");
+    serve([block({ content: "첫 줄\n둘째 줄" })]);
+    render(<MemoPage />);
+    await screen.findByText("첫 줄", { selector: ".cm-line" });
+    const view = onlyEditor();
+    expect(view.state.doc.toString()).toBe("첫 줄\n둘째 줄");
+    expect(view.state.selection.main.head).toBe(0);
+    fireEvent.mouseDown(view.dom.closest("article")!, { button: 0, clientY: 500 });
+    expect(view.state.selection.main.head).toBe(view.state.doc.length);
+  });
+
+  it("the keyboard tool bar's 제목 cycles the line's heading", async () => {
+    mockMatchMedia(true);
+    visit("?id=b1");
+    serve([block()]);
+    render(<MemoPage />);
+    await screen.findByText("내 메모", { selector: ".cm-line" });
+    const view = onlyEditor();
+    act(() => {
+      view.contentDOM.dispatchEvent(new FocusEvent("focus"));
+    });
+    const bar = await screen.findByRole("toolbar", { name: "메모 편집 도구" });
+    await userEvent.click(within(bar).getByRole("button", { name: "제목" }));
+    expect(view.state.doc.toString()).toBe("# 내 메모");
+    await userEvent.click(within(bar).getByRole("button", { name: "제목" }));
+    expect(view.state.doc.toString()).toBe("## 내 메모");
+  });
+});
+

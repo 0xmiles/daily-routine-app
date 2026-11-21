@@ -4,12 +4,11 @@ import type { Db } from "@/server/db/client";
 import { memoBlocks, memoFolders, type MemoFolderRow } from "@/server/db/schema";
 import type { MemoFolder } from "@/shared/contracts";
 import { HUES, nextFolderHue } from "@/ui/hues";
+import { FOLDER_NAME_MAX } from "./limits";
 import { isBlockId } from "./repo";
 
 // Memo folders: one level only. Deleting a folder never deletes a memo: its
 // memos move out, and the ones that were showing the folder's colour keep it.
-
-export const FOLDER_NAME_MAX = 40;
 
 const folderName = z
   .string()

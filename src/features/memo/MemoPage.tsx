@@ -7,37 +7,44 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
+import { flushSync } from "react-dom";
 import { onDataChanged, onNewMemoRequest, takeNewMemoTitle } from "@/features/shell/events";
-import { useIsWide } from "@/features/shell/useMediaQuery";
+import { useIsWide, useMediaQuery } from "@/features/shell/useMediaQuery";
 import { formatKoreanTimestamp } from "@/shared/time";
-import { hueFor, hueStyle } from "@/ui/hues";
+import { hueStyle } from "@/ui/hues";
 import { Button, Sheet, cx } from "@/ui/primitives";
 import { BlockEditor, type BlockEditorHandle } from "./BlockEditor";
 import { memoHref } from "./client";
-import { indentLines, outdentLines, toggleBold } from "./editor";
+import { cycleHeading, indentLines, outdentLines, toggleBold } from "./editor";
 import { EventLabel } from "./EventLabel";
-import { formatMemoTime, memoPreview, memoTitle } from "./format";
-import { BackIcon, CalendarIcon, CloseIcon, FileIcon, PlusIcon, SearchIcon, TrashIcon } from "./icons";
+import { FolderMenuSheet, NewFolderSheet } from "./FolderSheets";
+import { groupMemos, memoHue, shownMemos } from "./folders";
+import { FontSizeSheet } from "./FontSizeSheet";
+import { memoTitle } from "./format";
+import { BackIcon, CloseIcon, FileIcon, FolderPlusIcon, PlusIcon, SearchIcon, SidebarIcon, TrashIcon } from "./icons";
+import { MemoList, UNTITLED } from "./MemoList";
 import styles from "./MemoPage.module.css";
 import { MobileToolbar } from "./MobileToolbar";
+import { PlacementSheet } from "./PlacementSheet";
 import { MemoPad, type PadBlock } from "./store";
+import { clampFontScale, useMemoPrefs } from "./viewPrefs";
 
 export interface MemoPageProps {
   /** `?id=` (or the old `?block=`) from the server render; the URL is read live afterwards. */
   initialId?: string | null;
 }
 
-const UNTITLED = "새 메모";
-
-function matches(block: PadBlock, query: string): boolean {
-  if (!query) return true;
-  return block.content.toLowerCase().includes(query) || (block.eventRef?.title.toLowerCase().includes(query) ?? false);
+/** ⌥⌘S (⌥ Ctrl S elsewhere): show / hide the memo list on wide screens. Read by key position, so 한글 input works. */
+function isListToggle(event: globalThis.KeyboardEvent): boolean {
+  return (event.metaKey || event.ctrlKey) && event.altKey && !event.shiftKey && event.code === "KeyS";
 }
 
 /** The memo the URL names: by client key (new, unsaved files) or server id. */
@@ -62,6 +69,9 @@ function statusText(block: PadBlock): string {
  * title. Phone: the list, then one file full screen with its own back button.
  * 900px and wider: the list on the left and the open file on the right.
  *
+ * Memos can sit in folders (one level). On wide screens the list can be folded
+ * away (◧ / ⌥⌘S); the text size is chosen per device (가).
+ *
  * Contracts with the app shell (on phones):
  * - `body[data-editing="true"]` while typing hides the bottom tabs and top bar;
  * - `body[data-own-header="true"]` while a file is open hides the top bar, since
@@ -75,15 +85,23 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
   const urlRef = params ? (params.get("id") ?? params.get("block")) : initialId;
   const newRequest = params ? params.get("new") : null;
 
+  const prefs = useMemoPrefs();
+  const coarse = useMediaQuery("(pointer: coarse)");
+  const compact = wide === false || coarse === true;
+  const fontScale = clampFontScale(prefs.fontScale, compact);
+
   const editor = useRef<BlockEditorHandle | null>(null);
   const pendingFocus = useRef<"start" | "end" | null>(null);
   const searchInput = useRef<HTMLInputElement>(null);
   const openedFromList = useRef(false);
   const searchHintId = useId();
+  const listPaneId = useId();
 
   const [editing, setEditing] = useState(false);
   const [query, setQuery] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sheet, setSheet] = useState<null | "newFolder" | "placement" | "fontSize">(null);
+  const [folderMenuId, setFolderMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     pad.start();
@@ -92,8 +110,16 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
 
   const selected = findSelected(state.blocks, urlRef);
   const q = query.trim().toLowerCase();
-  const visible = state.blocks.filter((b) => matches(b, q));
+  const groups = useMemo(
+    () => groupMemos(state.blocks, state.folders, { query: q, closed: prefs.closedFolders }),
+    [state.blocks, state.folders, q, prefs.closedFolders],
+  );
+  const visible = useMemo(() => shownMemos(groups), [groups]);
+  const anyMatch = groups.loose.length > 0 || groups.folders.some((g) => g.memos.length > 0);
   const ready = state.phase === "ready";
+  // The list can be folded on wide screens, but never while there is nothing else to show.
+  const listShown = prefs.listOpen || !ready || state.blocks.length === 0;
+  const placementError = state.notice?.kind === "placementFailed" ? state.notice.message : null;
 
   // ---- navigation -------------------------------------------------------------
 
@@ -116,13 +142,15 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
     }
   }, []);
 
+  const { closedFolders, toggleFolder } = prefs;
   const newFile = useCallback(
-    (content = "") => {
+    (content = "", folderId: string | null = null) => {
       setQuery("");
-      const key = pad.addBlock(content);
+      if (folderId && closedFolders.has(folderId)) toggleFolder(folderId);
+      const key = pad.addBlock(content, folderId);
       open(key, "push", "end");
     },
-    [pad, open],
+    [pad, open, closedFolders, toggleFolder],
   );
 
   // A new file that just got its server id: put the id in the URL.
@@ -241,18 +269,26 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
 
   // ---- search -----------------------------------------------------------------------
 
+  const { listOpen, setListOpen } = prefs;
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "f") {
         if (phone && selected) return;
         event.preventDefault();
+        // A folded list opens first, so there is a search box to type in.
+        if (wide === true && !listOpen) flushSync(() => setListOpen(true));
         searchInput.current?.focus();
         searchInput.current?.select();
+        return;
+      }
+      if (isListToggle(event) && wide === true) {
+        event.preventDefault();
+        setListOpen(!listOpen);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [phone, selected]);
+  }, [phone, selected, wide, listOpen, setListOpen]);
 
   const onSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape") {
@@ -326,6 +362,16 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
           </div>
         </div>
       )}
+      {state.notice?.kind === "placementFailed" && (
+        <div className={styles.notice} role="status">
+          <p>{state.notice.message}</p>
+          <div className={styles.noticeActions}>
+            <button type="button" className={styles.noticeButton} onClick={() => pad.dismissNotice()}>
+              안내 닫기
+            </button>
+          </div>
+        </div>
+      )}
       {state.notice?.kind === "deleteConflict" && (
         <div className={styles.notice} role="status">
           <p>다른 기기에서 방금 고친 메모라 지우지 않고 남겨 두었어요. 내용을 확인한 뒤 다시 지워 주세요.</p>
@@ -339,11 +385,33 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
     </>
   );
 
+  const selectedFolder = selected?.folderId ? state.folders.find((f) => f.id === selected.folderId) : undefined;
+  const menuFolder = folderMenuId ? (state.folders.find((f) => f.id === folderMenuId) ?? null) : null;
+  const closeSheet = () => {
+    setSheet(null);
+    if (placementError) pad.dismissNotice();
+  };
+
+  // Clicking the empty space under the text puts the cursor at the end.
+  const onDocMouseDown = (event: MouseEvent<HTMLElement>) => {
+    const handle = editor.current;
+    if (!handle || event.button !== 0) return;
+    const host = handle.view.dom;
+    if (host.contains(event.target as Node) || event.clientY < host.getBoundingClientRect().bottom) return;
+    event.preventDefault();
+    handle.focus("end");
+  };
+
   return (
-    <div className={styles.page} data-view={selected ? "file" : "list"}>
+    <div
+      className={styles.page}
+      data-view={selected ? "file" : "list"}
+      data-list={listShown ? "open" : "closed"}
+      style={{ "--memo-scale": fontScale } as CSSProperties}
+    >
       <h1 className="sr-only">메모</h1>
 
-      <section className={styles.listPane} aria-label="메모 목록">
+      <section id={listPaneId} className={styles.listPane} aria-label="메모 목록">
         <div className={styles.listHead}>
           <div className={styles.searchBox} role="search">
             <SearchIcon size={18} />
@@ -366,6 +434,16 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
               </button>
             )}
           </div>
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label="새 폴더"
+            title="새 폴더"
+            onClick={() => setSheet("newFolder")}
+            disabled={!ready}
+          >
+            <FolderPlusIcon />
+          </button>
           <button
             type="button"
             className={cx(styles.iconButton, styles.newInList)}
@@ -401,7 +479,7 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
           </div>
         )}
 
-        {ready && state.blocks.length === 0 && (
+        {ready && state.blocks.length === 0 && state.folders.length === 0 && (
           <div className={styles.empty}>
             <span className={styles.emptyMark} aria-hidden="true">
               <FileIcon size={28} strokeWidth={1.7} />
@@ -412,43 +490,17 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
           </div>
         )}
 
-        {ready && visible.length > 0 && (
-          <ul className={styles.files}>
-            {visible.map((block) => {
-              const title = memoTitle(block) || UNTITLED;
-              const preview = memoPreview(block);
-              const on = selected?.key === block.key;
-              return (
-                <li key={block.key}>
-                  <a
-                    href={memoHref(block.id ?? block.key)}
-                    className={styles.file}
-                    style={hueStyle(hueFor(block.key))}
-                    aria-current={on ? "page" : undefined}
-                    onClick={(event) => onRowClick(event, block.key)}
-                  >
-                    <span className={styles.fileTitle}>
-                      {block.eventRef ? (
-                        <span className={styles.fileIcon} role="img" aria-label="일정 메모">
-                          <CalendarIcon size={13} />
-                        </span>
-                      ) : (
-                        <span className={styles.fileIcon} aria-hidden="true">
-                          <FileIcon size={14} strokeWidth={2} />
-                        </span>
-                      )}
-                      <span className={styles.fileName}>{title}</span>
-                    </span>
-                    <span className={styles.fileMeta}>
-                      <span className={cx("num", styles.fileTime)}>{formatMemoTime(block.updatedAt)}</span>
-                      <span className={styles.filePreview}>{preview || "내용 없음"}</span>
-                    </span>
-                    {block.status === "offline" && <span className={styles.fileStatus}>이 기기에만 있어요</span>}
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
+        {ready && (q ? anyMatch : state.blocks.length > 0 || state.folders.length > 0) && (
+          <MemoList
+            groups={groups}
+            folders={state.folders}
+            selectedKey={selected?.key ?? null}
+            searching={q !== ""}
+            onOpen={onRowClick}
+            onToggleFolder={toggleFolder}
+            onNewInFolder={(id) => newFile("", id)}
+            onFolderMenu={setFolderMenuId}
+          />
         )}
       </section>
 
@@ -460,9 +512,42 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
                 <BackIcon />
                 <span>메모</span>
               </button>
+              <button
+                type="button"
+                className={cx(styles.iconButton, styles.listToggle)}
+                aria-label={listShown ? "메모 목록 접기" : "메모 목록 펼치기"}
+                title={listShown ? "메모 목록 접기 (⌥⌘S)" : "메모 목록 펼치기 (⌥⌘S)"}
+                aria-expanded={listShown}
+                aria-controls={listPaneId}
+                aria-keyshortcuts="Alt+Meta+S"
+                onClick={() => setListOpen(!listShown)}
+              >
+                <SidebarIcon />
+              </button>
+              <button
+                type="button"
+                className={styles.chip}
+                style={hueStyle(memoHue(selected, state.folders))}
+                aria-label={`폴더와 색: ${selectedFolder?.name ?? "폴더 없음"}`}
+                onClick={() => setSheet("placement")}
+              >
+                <span className={styles.chipDot} aria-hidden="true" />
+                <span className={styles.chipName}>{selectedFolder?.name ?? "폴더 없음"}</span>
+              </button>
               <span className={styles.fileStatusText} aria-live="polite">
                 {statusText(selected)}
               </span>
+              <button
+                type="button"
+                className={styles.iconButton}
+                aria-label="글씨 크기"
+                title="글씨 크기"
+                onClick={() => setSheet("fontSize")}
+              >
+                <span className={styles.textSize} aria-hidden="true">
+                  가
+                </span>
+              </button>
               <button
                 type="button"
                 className={styles.iconButton}
@@ -476,8 +561,9 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
             <div className={styles.paneNotices}>{notices}</div>
             <article
               className={styles.doc}
-              style={hueStyle(hueFor(selected.key))}
+              style={hueStyle(memoHue(selected, state.folders))}
               data-toolbar={editingPhone || undefined}
+              onMouseDown={onDocMouseDown}
             >
               <p className={styles.stamp}>
                 <span className="num">{formatKoreanTimestamp(selected.updatedAt)}</span>에 고침
@@ -526,9 +612,47 @@ export function MemoPage({ initialId = null }: MemoPageProps) {
           onIndent={() => runOnEditor(indentLines)}
           onOutdent={() => runOnEditor(outdentLines)}
           onBold={() => runOnEditor(toggleBold)}
+          onHeading={() => runOnEditor(cycleHeading)}
           onDone={finishEditing}
         />
       )}
+
+      <NewFolderSheet
+        open={sheet === "newFolder"}
+        onClose={closeSheet}
+        onCreate={async (name) => (await pad.createFolder(name)) !== null}
+        error={sheet === "newFolder" ? placementError : null}
+      />
+      <FolderMenuSheet
+        folder={menuFolder}
+        memoCount={menuFolder ? state.blocks.filter((b) => b.folderId === menuFolder.id).length : 0}
+        onClose={() => {
+          setFolderMenuId(null);
+          if (placementError) pad.dismissNotice();
+        }}
+        onRename={(name) => menuFolder && void pad.renameFolder(menuFolder.id, name)}
+        onRecolor={(hue) => menuFolder && void pad.recolorFolder(menuFolder.id, hue)}
+        onDelete={() => {
+          if (!menuFolder) return;
+          setFolderMenuId(null);
+          void pad.deleteFolder(menuFolder.id);
+        }}
+        error={menuFolder ? placementError : null}
+      />
+      <PlacementSheet
+        block={sheet === "placement" ? selected : null}
+        folders={[...state.folders].sort((a, b) => a.name.localeCompare(b.name, "ko"))}
+        onClose={closeSheet}
+        onPlace={(patch) => selected && void pad.place(selected.key, patch)}
+        error={sheet === "placement" ? placementError : null}
+      />
+      <FontSizeSheet
+        open={sheet === "fontSize"}
+        onClose={closeSheet}
+        value={fontScale}
+        compact={compact}
+        onChange={prefs.setFontScale}
+      />
 
       <Sheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="이 메모를 지울까요?">
         <div className={styles.confirm}>

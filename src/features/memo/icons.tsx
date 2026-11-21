@@ -97,3 +97,55 @@ export function FileIcon({ size = 40, strokeWidth = 1.4 }: { size?: number; stro
     </svg>
   );
 }
+
+export function FolderIcon({ size = 16, strokeWidth = 2 }: { size?: number; strokeWidth?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={strokeWidth} {...base}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    </svg>
+  );
+}
+
+export function FolderPlusIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={2} {...base}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M12 10.5v5M9.5 13h5" />
+    </svg>
+  );
+}
+
+/** ▸ pointing right; rotate 90° for open. */
+export function ChevronIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={2.4} {...base}>
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+export function MoreIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={2.6} {...base}>
+      <path d="M6 12h.01M12 12h.01M18 12h.01" />
+    </svg>
+  );
+}
+
+/** A panel with a sidebar: shows / hides the memo list. */
+export function SidebarIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={1.9} {...base}>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="M9.5 4v16" />
+    </svg>
+  );
+}
+
+export function CheckIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" strokeWidth={2.6} {...base}>
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
