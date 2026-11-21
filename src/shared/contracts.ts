@@ -1,6 +1,8 @@
 // Shared types between browser and server. Copied verbatim from the plan (Task 0.2).
 // Do not change shapes here without coordinating with every track.
 
+import type { Hue } from '@/ui/hues';
+
 export type Scope = 'work' | 'personal';
 export type CalendarSource = 'personal' | 'work' | 'holiday';
 export interface CalendarEvent {
@@ -27,7 +29,12 @@ export interface EventRef {
   calendarId: string; eventId: string; recurringEventId: string | null;
   source: 'personal' | 'work'; title: string; start: string; end: string; allDay: boolean; deleted: boolean;
 }
-export interface MemoBlock { id: string; content: string; createdAt: string; updatedAt: string; version: number; eventRef: EventRef | null }
+export interface MemoBlock {
+  id: string; content: string; createdAt: string; updatedAt: string; version: number; eventRef: EventRef | null;
+  folderId: string | null;  // null = 폴더 밖
+  hue: Hue | null;          // null = 자동(폴더 색, 폴더 밖이면 메모마다 정해진 색)
+}
+export interface MemoFolder { id: string; name: string; hue: Hue; createdAt: string; updatedAt: string }
 export type AccountKind = 'checking' | 'savings' | 'investment';
 export interface BankAccount {
   id: string; kind: AccountKind; name: string; numberMasked: string | null;

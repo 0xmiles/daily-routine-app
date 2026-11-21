@@ -1,13 +1,15 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { GET as GET_BLOCKS, POST } from "@/app/api/memo/blocks/route";
-import { DELETE, PUT } from "@/app/api/memo/blocks/[id]/route";
+import { DELETE, PATCH, PUT } from "@/app/api/memo/blocks/[id]/route";
+import { POST as POST_FOLDER } from "@/app/api/memo/folders/route";
+import { DELETE as DELETE_FOLDER, PATCH as PATCH_FOLDER } from "@/app/api/memo/folders/[id]/route";
 import { GET as GET_KEYS } from "@/app/api/memo/event-keys/route";
 import { sessionCookieFor } from "@/server/auth/session";
 import type { Db } from "@/server/db/client";
 import { memoBlocks } from "@/server/db/schema";
 import { createTestDb } from "@/server/db/test-db";
-import type { EventRef, MemoBlock } from "@/shared/contracts";
+import type { EventRef, MemoBlock, MemoFolder } from "@/shared/contracts";
 
 let db: Db;
 let cookie: string;
@@ -205,5 +207,122 @@ describe("GET /api/memo/event-keys", () => {
     expect(res.status).toBe(200);
     const { keys } = (await res.json()) as { keys: string[] };
     expect([...keys].sort()).toEqual(["primary:evt-2", "work-cal:evt-1"]);
+  });
+});
+
+// ---- folders and placement --------------------------------------------------------
+
+async function folder(body: unknown): Promise<{ status: number; folder: MemoFolder }> {
+  const res = await POST_FOLDER(req("/folders", { method: "POST", body }));
+  return { status: res.status, folder: (await res.json()) as MemoFolder };
+}
+
+async function place(id: string, body: unknown): Promise<Response> {
+  return PATCH(req(`/blocks/${id}`, { method: "PATCH", body }), params(id));
+}
+
+async function list(): Promise<{ blocks: MemoBlock[]; folders: MemoFolder[] }> {
+  return (await (await GET_BLOCKS(req("/blocks"))).json()) as { blocks: MemoBlock[]; folders: MemoFolder[] };
+}
+
+const MISSING = "00000000-0000-4000-8000-000000000000";
+
+describe("memo folders", () => {
+  it("requires a session", async () => {
+    expect((await POST_FOLDER(req("/folders", { method: "POST", body: { name: "회사" }, auth: false }))).status).toBe(401);
+    expect((await PATCH_FOLDER(req(`/folders/${MISSING}`, { method: "PATCH", body: {}, auth: false }), params(MISSING))).status).toBe(401);
+    expect((await DELETE_FOLDER(req(`/folders/${MISSING}`, { method: "DELETE", auth: false }), params(MISSING))).status).toBe(401);
+    expect((await place(MISSING, {})).status).not.toBe(401);
+  });
+
+  it("creates folders with the first unused pencil and lists them with the blocks", async () => {
+    const a = await folder({ name: "회사" });
+    const b = await folder({ name: "개인" });
+    expect(a.status).toBe(201);
+    expect([a.folder.hue, b.folder.hue]).toEqual(["pink", "lilac"]);
+    expect((await folder({ name: "모임", hue: "sky" })).folder.hue).toBe("sky");
+    const { folders } = await list();
+    expect(folders.map((f) => f.name)).toEqual(["회사", "개인", "모임"]);
+  });
+
+  it("trims folder names and refuses empty or over-40-character ones", async () => {
+    expect((await folder({ name: "  회사 " })).folder.name).toBe("회사");
+    expect((await folder({ name: "   " })).status).toBe(400);
+    expect((await folder({ name: "가".repeat(41) })).status).toBe(400);
+    expect((await folder({ name: "가".repeat(40) })).status).toBe(201);
+    expect((await folder({ name: "회사", hue: "navy" })).status).toBe(400);
+  });
+
+  it("allows two folders with the same name", async () => {
+    await folder({ name: "회사" });
+    expect((await folder({ name: "회사" })).status).toBe(201);
+  });
+
+  it("renames and recolours a folder; 404 for one that doesn't exist", async () => {
+    const { folder: f } = await folder({ name: "회사" });
+    const res = await PATCH_FOLDER(req(`/folders/${f.id}`, { method: "PATCH", body: { name: " 일 ", hue: "green" } }), params(f.id));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ name: "일", hue: "green" });
+    expect((await PATCH_FOLDER(req(`/folders/${MISSING}`, { method: "PATCH", body: { name: "x" } }), params(MISSING))).status).toBe(404);
+    expect((await PATCH_FOLDER(req("/folders/nope", { method: "PATCH", body: { name: "x" } }), params("nope"))).status).toBe(404);
+  });
+
+  it("creates a memo inside a folder, with a colour", async () => {
+    const { folder: f } = await folder({ name: "회사" });
+    const { status, block } = await create({ content: "주간 회의", folderId: f.id, hue: "aqua" });
+    expect(status).toBe(201);
+    expect(block).toMatchObject({ folderId: f.id, hue: "aqua" });
+  });
+
+  it("creates a memo outside any folder when its folder is gone (never refuses the text)", async () => {
+    const gone = await create({ content: "지하철에서 쓴 글", folderId: MISSING });
+    expect(gone.status).toBe(201);
+    expect(gone.block).toMatchObject({ content: "지하철에서 쓴 글", folderId: null, hue: null });
+    const odd = await create({ content: "이상한 값", folderId: "local-abc", hue: "navy" });
+    expect(odd.status).toBe(201);
+    expect(odd.block).toMatchObject({ folderId: null, hue: null });
+  });
+
+  it("moves a memo without touching its version or updatedAt, so a text save from another device still lands", async () => {
+    const { folder: f } = await folder({ name: "회사" });
+    const { block } = await create({ content: "주간 회의" });
+    const res = await place(block.id, { folderId: f.id });
+    expect(res.status).toBe(200);
+    const moved = (await res.json()) as MemoBlock;
+    expect(moved).toMatchObject({ folderId: f.id, version: block.version, updatedAt: block.updatedAt, content: "주간 회의" });
+
+    const save = await PUT(req(`/blocks/${block.id}`, { method: "PUT", body: { content: "다른 기기", baseVersion: block.version } }), params(block.id));
+    expect(save.status).toBe(200);
+    expect(((await save.json()) as MemoBlock).folderId).toBe(f.id);
+  });
+
+  it("sets and clears a memo's own colour", async () => {
+    const { block } = await create({ content: "장보기" });
+    expect(((await (await place(block.id, { hue: "lemon" })).json()) as MemoBlock).hue).toBe("lemon");
+    expect(((await (await place(block.id, { hue: null })).json()) as MemoBlock).hue).toBeNull();
+    expect((await place(block.id, { hue: "navy" })).status).toBe(400);
+  });
+
+  it("refuses to move into a folder that doesn't exist; 404 for a memo that doesn't", async () => {
+    const { block } = await create({ content: "장보기" });
+    const res = await place(block.id, { folderId: MISSING });
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { message: string }).message).toMatch(/폴더/);
+    expect((await place(MISSING, { hue: "sky" })).status).toBe(404);
+  });
+
+  it("deleting a folder keeps every memo in it, moves them out, and keeps their colour", async () => {
+    const { folder: f } = await folder({ name: "회사", hue: "tangerine" });
+    const plain = (await create({ content: "주간 회의", folderId: f.id })).block;
+    const own = (await create({ content: "1:1", folderId: f.id, hue: "sky" })).block;
+    const res = await DELETE_FOLDER(req(`/folders/${f.id}`, { method: "DELETE" }), params(f.id));
+    expect(res.status).toBe(204);
+
+    const { blocks, folders } = await list();
+    expect(folders).toHaveLength(0);
+    const byId = new Map(blocks.map((b) => [b.id, b]));
+    expect(byId.get(plain.id)).toMatchObject({ folderId: null, hue: "tangerine", version: plain.version, updatedAt: plain.updatedAt });
+    expect(byId.get(own.id)).toMatchObject({ folderId: null, hue: "sky", version: own.version });
+    expect((await DELETE_FOLDER(req(`/folders/${f.id}`, { method: "DELETE" }), params(f.id))).status).toBe(404);
   });
 });

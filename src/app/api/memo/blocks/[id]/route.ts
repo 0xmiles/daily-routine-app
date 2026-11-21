@@ -1,5 +1,5 @@
-import { BLOCK_NOT_FOUND, readBody } from "@/features/memo/server/http";
-import { deleteBlock, saveBlock, saveBlockSchema } from "@/features/memo/server/repo";
+import { BLOCK_NOT_FOUND, FOLDER_NOT_FOUND, readBody } from "@/features/memo/server/http";
+import { deleteBlock, placeBlock, placeBlockSchema, saveBlock, saveBlockSchema } from "@/features/memo/server/repo";
 import { withUser } from "@/server/auth/session";
 import { getDb } from "@/server/db/client";
 import { json, problem } from "@/shared/http";
@@ -15,6 +15,21 @@ export const PUT = withUser(async (req, _user, ctx: RouteContext<"/api/memo/bloc
   const result = await saveBlock(getDb(), id, body.data.content, body.data.baseVersion);
   if (!result) return problem(404, BLOCK_NOT_FOUND);
   if (!result.ok) return json({ current: result.current }, 409);
+  return json(result.block);
+});
+
+/**
+ * PATCH /api/memo/blocks/[id] { folderId?, hue? } → 200 MemoBlock.
+ * Moves the memo / sets its colour without touching version or updatedAt.
+ * 400 when the folder doesn't exist, 404 when the memo doesn't.
+ */
+export const PATCH = withUser(async (req, _user, ctx: RouteContext<"/api/memo/blocks/[id]">) => {
+  const { id } = await ctx.params;
+  const body = await readBody(req, placeBlockSchema);
+  if (!body.ok) return body.response;
+  const result = await placeBlock(getDb(), id, body.data);
+  if (!result) return problem(404, BLOCK_NOT_FOUND);
+  if (!result.ok) return problem(400, FOLDER_NOT_FOUND);
   return json(result.block);
 });
 

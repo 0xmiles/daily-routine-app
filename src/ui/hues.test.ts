@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HUES, accountHue, dayHue, hueFor, hueStyle } from "./hues";
+import { HUES, accountHue, dayHue, hueFor, hueStyle, isHue, nextFolderHue } from "./hues";
 
 describe("colour pencils", () => {
   it("gives every weekday its own pencil, Sunday pink and Saturday sky", () => {
@@ -23,5 +23,18 @@ describe("colour pencils", () => {
 
   it("sets --hue to the pencil's token", () => {
     expect(hueStyle("aqua")).toEqual({ "--hue": "var(--aqua)" });
+  });
+
+  it("gives a new folder the first unused pencil, then the least used one", () => {
+    expect(nextFolderHue([])).toBe("pink");
+    expect(nextFolderHue(["pink"])).toBe("lilac");
+    expect(nextFolderHue([...HUES, "pink"])).toBe("lilac");
+    expect(nextFolderHue([...HUES, ...HUES])).toBe("pink");
+  });
+
+  it("knows the seven pencil names", () => {
+    expect(isHue("sky")).toBe(true);
+    expect(isHue("navy")).toBe(false);
+    expect(isHue(null)).toBe(false);
   });
 });

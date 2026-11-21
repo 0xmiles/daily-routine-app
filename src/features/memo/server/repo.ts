@@ -1,8 +1,9 @@
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/server/db/client";
-import { memoBlocks, type MemoBlockRow } from "@/server/db/schema";
+import { memoBlocks, memoFolders, type MemoBlockRow } from "@/server/db/schema";
 import type { EventRef, MemoBlock } from "@/shared/contracts";
+import { HUES, isHue, type Hue } from "@/ui/hues";
 
 // Memo blocks: one long memo pad split into blocks (Heynote style).
 //
@@ -40,6 +41,10 @@ export const eventRefSchema = z.object({
 export const createBlockSchema = z.object({
   content: z.string().max(MAX_CONTENT).optional(),
   eventRef: eventRefSchema.optional(),
+  // Lenient on purpose: a create carries text that must never be refused over
+  // where it goes. An unknown folder or colour just means "outside, automatic".
+  folderId: z.string().max(64).nullable().optional(),
+  hue: z.string().max(32).nullable().optional(),
 });
 export type CreateBlockInput = z.infer<typeof createBlockSchema>;
 
@@ -47,6 +52,12 @@ export const saveBlockSchema = z.object({
   content: z.string().max(MAX_CONTENT),
   baseVersion: z.number().int().min(1),
 });
+
+export const placeBlockSchema = z.object({
+  folderId: z.string().regex(UUID_RE).nullable().optional(),
+  hue: z.enum(HUES).nullable().optional(),
+});
+export type Placement = z.infer<typeof placeBlockSchema>;
 
 export function toMemoBlock(row: MemoBlockRow): MemoBlock {
   return {
@@ -56,7 +67,15 @@ export function toMemoBlock(row: MemoBlockRow): MemoBlock {
     updatedAt: row.updatedAt.toISOString(),
     version: row.version,
     eventRef: row.eventRef ?? null,
+    folderId: row.folderId ?? null,
+    hue: row.hue ?? null,
   };
+}
+
+/** The folder id as stored: the folder if it (still) exists, else null. Same statement as the write, so no race. */
+function existingFolder(folderId: string | null | undefined) {
+  if (!folderId || !isBlockId(folderId)) return null;
+  return sql<string | null>`(select ${memoFolders.id} from ${memoFolders} where ${memoFolders.id} = ${folderId})`;
 }
 
 function normalizeEventRef(ref: z.infer<typeof eventRefSchema>): EventRef {
@@ -95,8 +114,12 @@ export async function getBlock(db: Db, id: string): Promise<MemoBlock | null> {
  * title/time changed, so the label follows the calendar (spec §5.1).
  */
 export async function createBlock(db: Db, input: CreateBlockInput): Promise<{ block: MemoBlock; created: boolean }> {
+  const placement = { folderId: existingFolder(input.folderId), hue: isHue(input.hue) ? input.hue : null };
   if (!input.eventRef) {
-    const [row] = await db.insert(memoBlocks).values({ content: input.content ?? "" }).returning();
+    const [row] = await db
+      .insert(memoBlocks)
+      .values({ content: input.content ?? "", ...placement })
+      .returning();
     return { block: toMemoBlock(row), created: true };
   }
 
@@ -110,6 +133,7 @@ export async function createBlock(db: Db, input: CreateBlockInput): Promise<{ bl
       content: input.content ?? EVENT_BLOCK_INITIAL_CONTENT,
       eventKey: ref.eventKey,
       eventRef: ref,
+      ...placement,
     })
     .onConflictDoNothing({ target: memoBlocks.eventKey })
     .returning();
@@ -149,6 +173,34 @@ export async function saveBlock(db: Db, id: string, content: string, baseVersion
   if (updated) return { ok: true, block: toMemoBlock(updated) };
   const current = await getBlock(db, id);
   return current ? { ok: false, current } : null;
+}
+
+export type PlaceResult = { ok: true; block: MemoBlock } | { ok: false; reason: "folder" } | null;
+
+/**
+ * Moves a memo to a folder (or out: `folderId: null`) and/or sets its colour
+ * (`hue: null` = automatic). Not part of the text: `version` and `updated_at`
+ * stay as they are, so this never conflicts with a text save from another
+ * device and doesn't move the memo up the list. Last write wins.
+ * `null` when the memo doesn't exist; `{ ok: false }` when the folder doesn't.
+ */
+export async function placeBlock(db: Db, id: string, patch: Placement): Promise<PlaceResult> {
+  if (!isBlockId(id)) return null;
+  const set: { folderId?: string | null; hue?: Hue | null } = {};
+  if (patch.folderId !== undefined) {
+    if (patch.folderId !== null) {
+      const [folder] = await db.select({ id: memoFolders.id }).from(memoFolders).where(eq(memoFolders.id, patch.folderId));
+      if (!folder) return { ok: false, reason: "folder" };
+    }
+    set.folderId = patch.folderId;
+  }
+  if (patch.hue !== undefined) set.hue = patch.hue;
+  if (Object.keys(set).length === 0) {
+    const current = await getBlock(db, id);
+    return current ? { ok: true, block: current } : null;
+  }
+  const [updated] = await db.update(memoBlocks).set(set).where(eq(memoBlocks.id, id)).returning();
+  return updated ? { ok: true, block: toMemoBlock(updated) } : null;
 }
 
 export type DeleteResult = { ok: true } | { ok: false; current: MemoBlock } | null;

@@ -23,3 +23,5 @@ export async function readBody<S extends z.ZodType>(
 }
 
 export const BLOCK_NOT_FOUND = "메모 블록을 찾지 못했어요. 다른 기기에서 지웠을 수 있으니 새로고침해 주세요.";
+
+export const FOLDER_NOT_FOUND = "폴더를 찾지 못했어요. 다른 기기에서 지웠을 수 있으니 새로고침해 주세요.";

@@ -30,3 +30,19 @@ export function hueFor(key: string): Hue {
 export function hueStyle(hue: Hue): CSSProperties {
   return { "--hue": `var(--${hue})` } as CSSProperties;
 }
+
+export function isHue(value: unknown): value is Hue {
+  return typeof value === "string" && (HUES as readonly string[]).includes(value);
+}
+
+/**
+ * The pencil for a new memo folder: the first one no folder uses yet (in HUES
+ * order); once all seven are taken, the least used one.
+ */
+export function nextFolderHue(used: readonly Hue[]): Hue {
+  const counts = new Map<Hue, number>(HUES.map((h) => [h, 0]));
+  for (const hue of used) counts.set(hue, (counts.get(hue) ?? 0) + 1);
+  let best: Hue = HUES[0];
+  for (const hue of HUES) if (counts.get(hue)! < counts.get(best)!) best = hue;
+  return best;
+}

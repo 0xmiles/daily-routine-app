@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { AccountKind, EventRef, Recurrence, Scope } from "@/shared/contracts";
+import type { Hue } from "@/ui/hues";
 
 // Owned by Phase 0. Other tracks: do not edit — report needed changes instead.
 // After editing, run `npm run db:generate` to add a migration under drizzle/.
@@ -94,6 +95,15 @@ export const notifications = pgTable(
   (t) => [index("notifications_fire_at_idx").on(t.fireAt), index("notifications_todo_id_idx").on(t.todoId)],
 );
 
+/** Memo folders: one level, no folders inside folders. */
+export const memoFolders = pgTable("memo_folders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  hue: text("hue").$type<Hue>().notNull(),
+  createdAt: timestamptz("created_at").notNull().defaultNow(),
+  updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+});
+
 export const memoBlocks = pgTable("memo_blocks", {
   id: uuid("id").primaryKey().defaultRandom(),
   content: text("content").notNull().default(""),
@@ -102,6 +112,10 @@ export const memoBlocks = pgTable("memo_blocks", {
   version: integer("version").notNull().default(1),
   createdAt: timestamptz("created_at").notNull().defaultNow(),
   updatedAt: timestamptz("updated_at").notNull().defaultNow(),
+  // Placement. Changing these never bumps `version` or `updated_at` (see repo.ts).
+  folderId: uuid("folder_id").references(() => memoFolders.id, { onDelete: "set null" }),
+  /** null = automatic: the folder's colour, or hueFor() outside a folder. */
+  hue: text("hue").$type<Hue>(),
 });
 
 export const bankAccounts = pgTable("bank_accounts", {
@@ -171,6 +185,7 @@ export type NewTodoRow = typeof todos.$inferInsert;
 export type NotificationRow = typeof notifications.$inferSelect;
 export type NewNotificationRow = typeof notifications.$inferInsert;
 export type MemoBlockRow = typeof memoBlocks.$inferSelect;
+export type MemoFolderRow = typeof memoFolders.$inferSelect;
 export type NewMemoBlockRow = typeof memoBlocks.$inferInsert;
 export type BankAccountRow = typeof bankAccounts.$inferSelect;
 export type NewBankAccountRow = typeof bankAccounts.$inferInsert;
